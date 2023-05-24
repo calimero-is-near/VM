@@ -177,7 +177,7 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
     }
     setReactState({ hooks: [], state: undefined });
     const vm = new VM({
-      near,
+      near: props.otherEnvNear || near,
       rawCode: code,
       setReactState,
       cache,
