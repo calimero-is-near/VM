@@ -56,7 +56,7 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
     depth,
     config: propsConfig,
     props: propsProps,
-    otherEnvNear,
+    overrideNear,
     ...forwardedProps
   } = props;
 
@@ -85,12 +85,6 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
   const near = useNear(networkId);
   const accountId = useAccountId(networkId);
   const [element, setElement] = useState(null);
-
-  console.log(otherEnvNear, 'the other env near')
-
-  if(otherEnvNear) {
-    console.log(otherEnvNear, '<<<< mainnetNear', near, '<<<< testnetNear')
-  }
 
   useEffect(() => {
     const newConfigs = propsConfig
@@ -184,7 +178,7 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
     }
     setReactState({ hooks: [], state: undefined });
     const vm = new VM({
-      near: otherEnvNear || near,
+      near,
       rawCode: code,
       setReactState,
       cache,
