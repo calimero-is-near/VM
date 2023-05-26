@@ -99,10 +99,9 @@ const loadAccount = async (near, setAccount) => {
   setAccount(account);
 };
 
-export const useAccount = singletonHook(defaultAccount, (nearOverride) => {
+export const useAccount = singletonHook(defaultAccount, () => {
   const [account, setAccount] = useState(defaultAccount);
-  const singletonNear = useNear();
-  const near = nearOverride || singletonNear;
+  const near = useNear();
 
   useEffect(() => {
     if (!near) {
