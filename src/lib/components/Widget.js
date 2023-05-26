@@ -56,7 +56,6 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
     depth,
     config: propsConfig,
     props: propsProps,
-    overrideNear,
     ...forwardedProps
   } = props;
 
