@@ -653,7 +653,7 @@ class VmStack {
       return <Widget {...attributes} />;
     } else if (element === "CommitButton") {
       return (
-        <CommitButton {...attributes} widgetSrc={this.vm.widgetSrc}>
+        <CommitButton {...attributes} widgetSrc={this.vm.widgetSrc} chainId={this.vm.widgetConfigs.findLast(config => config && config.chainId).chainId}>
           {children}
         </CommitButton>
       );
@@ -1030,6 +1030,7 @@ class VmStack {
           {
             src: this.vm.widgetSrc,
             type: StorageType.Private,
+            chainId: this.vm.widgetConfigs.findLast(config => config && config.chainId).chainId || this.vm.near.config.networkId
           },
           args[0],
           args[1]
@@ -1042,6 +1043,7 @@ class VmStack {
           {
             src: this.vm.widgetSrc,
             type: StorageType.Private,
+            chainId: this.vm.widgetConfigs.findLast(config => config && config.chainId).chainId || this.vm.near.config.networkId
           },
           args[0]
         );
@@ -1053,6 +1055,7 @@ class VmStack {
           {
             src: this.vm.widgetSrc,
             type: StorageType.Public,
+            chainId: this.vm.widgetConfigs.findLast(config => config && config.chainId).chainId || this.vm.near.config.networkId
           },
           args[0],
           args[1]
@@ -1065,6 +1068,7 @@ class VmStack {
           {
             src: args[1] ?? this.vm.widgetSrc,
             type: StorageType.Public,
+            chainId: this.vm.widgetConfigs.findLast(config => config && config.chainId).chainId || this.vm.near.config.networkId
           },
           args[0]
         );
