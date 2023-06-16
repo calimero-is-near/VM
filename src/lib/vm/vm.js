@@ -1030,7 +1030,6 @@ class VmStack {
           {
             src: this.vm.widgetSrc,
             type: StorageType.Private,
-            networkId: this.vm.widgetConfigs.findLast(config => config && config.networkId)?.networkId || this.vm.near.config.networkId
           },
           args[0],
           args[1]
@@ -1043,7 +1042,6 @@ class VmStack {
           {
             src: this.vm.widgetSrc,
             type: StorageType.Private,
-            networkId: this.vm.widgetConfigs.findLast(config => config && config.networkId)?.networkId || this.vm.near.config.networkId
           },
           args[0]
         );
@@ -1055,7 +1053,6 @@ class VmStack {
           {
             src: this.vm.widgetSrc,
             type: StorageType.Public,
-            networkId: this.vm.widgetConfigs.findLast(config => config && config.networkId)?.networkId || this.vm.near.config.networkId
           },
           args[0],
           args[1]
@@ -1068,7 +1065,6 @@ class VmStack {
           {
             src: args[1] ?? this.vm.widgetSrc,
             type: StorageType.Public,
-            networkId: this.vm.widgetConfigs.findLast(config => config && config.networkId)?.networkId || this.vm.near.config.networkId
           },
           args[0]
         );
