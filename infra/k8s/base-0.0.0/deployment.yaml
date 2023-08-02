@@ -15,7 +15,7 @@ spec:
       containers:
         - name: cali-bos
           image: cali-bos:latest
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
               protocol: TCP
