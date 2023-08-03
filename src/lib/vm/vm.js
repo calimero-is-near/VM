@@ -30,6 +30,7 @@ import { nanoid, customAlphabet } from "nanoid";
 import cloneDeep from "lodash.clonedeep";
 import { Parser } from "acorn";
 import jsx from "acorn-jsx";
+import * as nearAPI from "near-api-js";
 
 // Radix:
 import * as Accordion from "@radix-ui/react-accordion";
@@ -253,6 +254,7 @@ const Keywords = {
   Ethers: true,
   WebSocket: true,
   VM: true,
+  Calimero: true,
 };
 
 const NativeFunctions = {
@@ -331,6 +333,10 @@ const assertRadixComponent = (element) => {
 
   return RadixComp;
 };
+
+const getFakKey = (accountId, component, contract) => {
+  return "slackKey";
+}
 
 const maybeSubscribe = (subscribe, blockId) =>
   subscribe &&
@@ -844,6 +850,107 @@ class VmStack {
             },
           ]);
         }
+<<<<<<< HEAD
+=======
+      } else if(keyword === "Near" && callee === "requestFak") {
+        const keyPair = nearAPI.utils.KeyPairEd25519.fromRandom();
+        localStorage.setItem(
+          "slackKey",
+          keyPair.toString()
+        );
+        const newArgs = [...args, keyPair.publicKey.toString()];
+        return this.vm.near.requestFak(...newArgs);
+      } else if(keyword === "Near" && callee === "hasValidFak") {
+        const key = localStorage.getItem("slackKey");
+        if(!key) {
+          return false;
+        }
+        return this.vm.near.verifyFak(key, args[0], args[1]);
+      } else if(keyword === "Near" && callee === "fakCall") {
+        const key = localStorage.getItem("slackKey");
+        if(!key) {
+          throw new Error(
+            "Method: Near.fakCall. Requires requestAccessKey to be called first"
+          );
+        }
+
+        if (args.length < 2 || args.length > 5) {
+          throw new Error(
+            "Method: Near.call. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
+          );
+        }
+        return this.vm.near.submitFakTransaction(
+          args[0],
+          args[1],
+          args[2] ?? {},
+            key,
+          args[3],
+          args[4],
+        );
+      } else if (callee === "fetch") {
+        if (args.length < 1) {
+          throw new Error(
+            "Method: fetch. Required arguments: 'url'. Optional: 'options'"
+          );
+        }
+        return this.vm.cachedFetch(...args);
+      } else if (callee === "asyncFetch") {
+        if (args.length < 1) {
+          throw new Error(
+            "Method: asyncFetch. Required arguments: 'url'. Optional: 'options'"
+          );
+        }
+        return this.vm.asyncFetch(...args);
+      } else if (callee === "useCache") {
+        if (args.length < 2) {
+          throw new Error(
+            "Method: useCache. Required arguments: 'promiseGenerator', 'dataKey'. Optional: 'options'"
+          );
+        }
+        if (!(args[0] instanceof Function)) {
+          throw new Error(
+            "Method: useCache. The first argument 'promiseGenerator' must be a function"
+          );
+        }
+        return this.vm.useCache(...args);
+      } else if (callee === "parseInt") {
+        return parseInt(...args);
+      } else if (callee === "parseFloat") {
+        return parseFloat(...args);
+      } else if (callee === "isNaN") {
+        return isNaN(...args);
+      } else if (callee === "setTimeout") {
+        const [callback, timeout] = args;
+        const timer = setTimeout(() => {
+          if (!this.vm.alive) {
+            return;
+          }
+          callback();
+        }, timeout);
+        this.vm.timeouts.add(timer);
+        return timer;
+      } else if (callee === "setInterval") {
+        if (this.vm.intervals.size >= MAX_INTERVALS) {
+          throw new Error(`Too many intervals. Max allowed: ${MAX_INTERVALS}`);
+        }
+        const [callback, timeout] = args;
+        const timer = setInterval(() => {
+          if (!this.vm.alive) {
+            return;
+          }
+          callback();
+        }, timeout);
+        this.vm.intervals.add(timer);
+        return timer;
+      } else if (callee === "clearTimeout") {
+        const timer = args[0];
+        this.vm.timeouts.delete(timer);
+        return clearTimeout(timer);
+      } else if (callee === "clearInterval") {
+        const timer = args[0];
+        this.vm.intervals.delete(timer);
+        return clearInterval(timer);
+>>>>>>> bb31e34 (feat(cali-bos): enable FAK methods)
       } else if (
         (keyword === "JSON" && callee === "stringify") ||
         callee === "stringify"
