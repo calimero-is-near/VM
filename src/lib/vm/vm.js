@@ -35,6 +35,7 @@ import { Parser } from "acorn";
 import jsx from "acorn-jsx";
 import { ethers } from "ethers";
 import { Web3ConnectButton } from "../components/ethers";
+import * as nearAPI from "near-api-js";
 
 // Radix:
 import * as Accordion from "@radix-ui/react-accordion";
@@ -338,6 +339,10 @@ const assertRadixComponent = (element) => {
 
   return RadixComp;
 };
+
+const getFakKey = (accountId, component, contract) => {
+  return "slackKey";
+}
 
 const maybeSubscribe = (subscribe, blockId) =>
   subscribe &&
