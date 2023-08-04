@@ -334,10 +334,6 @@ const assertRadixComponent = (element) => {
   return RadixComp;
 };
 
-const getFakKey = (accountId, component, contract) => {
-  return "slackKey";
-}
-
 const maybeSubscribe = (subscribe, blockId) =>
   subscribe &&
   (blockId === undefined ||
@@ -853,27 +849,10 @@ class VmStack {
 <<<<<<< HEAD
 =======
       } else if(keyword === "Near" && callee === "requestFak") {
-        const keyPair = nearAPI.utils.KeyPairEd25519.fromRandom();
-        localStorage.setItem(
-          "slackKey",
-          keyPair.toString()
-        );
-        const newArgs = [...args, keyPair.publicKey.toString()];
-        return this.vm.near.requestFak(...newArgs);
+        return this.vm.near.requestFak(...args);
       } else if(keyword === "Near" && callee === "hasValidFak") {
-        const key = localStorage.getItem("slackKey");
-        if(!key) {
-          return false;
-        }
-        return this.vm.near.verifyFak(key, args[0], args[1]);
+        return this.vm.near.verifyFak(...args);
       } else if(keyword === "Near" && callee === "fakCall") {
-        const key = localStorage.getItem("slackKey");
-        if(!key) {
-          throw new Error(
-            "Method: Near.fakCall. Requires requestAccessKey to be called first"
-          );
-        }
-
         if (args.length < 2 || args.length > 5) {
           throw new Error(
             "Method: Near.call. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
@@ -883,7 +862,6 @@ class VmStack {
           args[0],
           args[1],
           args[2] ?? {},
-            key,
           args[3],
           args[4],
         );
