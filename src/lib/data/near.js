@@ -654,7 +654,7 @@ async function _initNear({
 }
 
 export const useInitNear = singletonHook({}, () => {
-    const [nearPromise, setNearPromise] = useState(null);
+  const [nearPromise, setNearPromise] = useState(null);
 
   return {
     nearPromise,
