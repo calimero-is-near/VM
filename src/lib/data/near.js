@@ -258,30 +258,43 @@ async function submitFakCalimeroTransaction(componentName, near, contractName, m
   const key = localStorage.getItem(
     await getCalimeroFakKey(componentName, near, contractName)
   );
+
   if(!key) {
     throw new Error(
       "Method: Near.fakCalimeroCall. Requires requestAccessKey to be called first"
     );
   }
-  const accountId = await getCurrentAccount(near);
-  const provider = new nearAPI.providers.JsonRpcProvider({ url: CalimeroConfig.nodeUrl });
 
+  const accountId = await getCurrentAccount(near);
   const keyStore = new nearAPI.keyStores.InMemoryKeyStore();
   const keyPair = nearAPI.KeyPair.fromString(key);
   keyStore.setKey(CalimeroConfig.networkId, accountId, keyPair);
 
-  const account = new nearAPI.Account({
-    provider,
-    signer: new nearAPI.InMemorySigner(keyStore),
-    networkId: CalimeroConfig.networkId,
-  }, accountId);
+  const calimeroConnection = await nearAPI.connect(
+    {
+      networkId: CalimeroConfig.networkId,
+      keyStore: keyStore,
+      signer: new nearAPI.InMemorySigner(keyStore),
+      nodeUrl: CalimeroConfig.calimeroUrl,
+      walletUrl: CalimeroConfig.walletUrl,
+      headers: {
+        ['x-api-key']: CalimeroConfig.calimeroToken,
+      },
+    }
+  );
+
+  const account = await calimeroConnection.account(accountId);
 
   const contract = new nearAPI.Contract(
     account,
     contractName,
     { changeMethods: [methodName], viewMethods: []}
   );
-  return await contract[methodName]({ ...args }, gas?.toFixed(0), deposit?.toFixed(0));
+  try {
+    return await contract[methodName]({ ...args }, gas?.toFixed(0), deposit?.toFixed(0));
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 async function submitFakTransaction(componentName, near, contractName, methodName, args, gas, deposit) {
@@ -547,7 +560,7 @@ async function _initNear({
   _near.requestFak = (contractName, methodNames) => requestFak("slackApp", _near, contractName, methodNames);
   _near.requestCalimeroFak = (contractName, methodNames) => requestCalimeroFak("slackApp", _near, contractName, methodNames);
   _near.submitFakTransaction = (contractName, methodName, args, gas, deposit) => submitFakTransaction("slackApp", _near, contractName, methodName, args, gas, deposit);
-  _near.submitFakCalimeroTransaction = (contractName, methodName, args, gas, deposit) => submitFakCalimeroTransaction("slackApp", _near, contractName, methodName, args, gas, deposit);
+  _near.submitCalimeroFakTransaction = (contractName, methodName, args, gas, deposit) => submitFakCalimeroTransaction("slackApp", _near, contractName, methodName, args, gas, deposit);
   _near.verifyFak = (contractName, methodNames) => verifyFak("slackApp", _near, contractName, methodNames);
   _near.verifyCalimeroFak = (contractName, methodNames) => verifyCalimeroFak("slackApp", _near, contractName, methodNames);
   _near.block = (blockHeightOrFinality) => {
