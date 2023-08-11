@@ -557,6 +557,20 @@ async function _initNear({
       : fastRpcCall();
   };
 
+  _near.viewCalimero = (contractId, methodName, args, blockId) => {
+    const viewCalimeroCall = () =>
+      viewCall(
+        _near.calimeroConnection.connection.provider,
+        blockId ?? undefined,
+        contractId,
+        methodName,
+        args,
+        "final"
+      );
+    return viewCalimeroCall();
+  }
+
+
   _near.requestFak = (contractName, methodNames) => requestFak("slackApp", _near, contractName, methodNames);
   _near.requestCalimeroFak = (contractName, methodNames) => requestCalimeroFak("slackApp", _near, contractName, methodNames);
   _near.submitFakTransaction = (contractName, methodName, args, gas, deposit) => submitFakTransaction("slackApp", _near, contractName, methodName, args, gas, deposit);
