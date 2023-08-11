@@ -3,6 +3,8 @@ import Big from "big.js";
 import { useEffect, useMemo, useState } from "react";
 import { singletonHook } from "react-singleton-hook";
 import { MaxGasPerTransaction, TGas } from "./utils";
+import { SCHEMA } from 'near-api-js/lib/transaction';
+import { serialize } from 'borsh';
 
 const UseLegacyFunctionCallCreator = true;
 export const functionCallCreator = UseLegacyFunctionCallCreator
@@ -40,6 +42,16 @@ const TestNearConfig = {
   apiUrl: "https://discovery-api.stage.testnet.near.org",
   enableWeb4FastRpc: false,
 };
+
+const CalimeroConfig = {
+  networkId: "testingshard-calimero-testnet",
+  calimeroUrl: "https://api.staging.calimero.network/api/v1/shards/testingshard-calimero-testnet/neard-rpc/",
+  walletUrl: "https://mnw-calimero-staging-testnet.netlify.app/",
+  calimeroToken: "3c154fef54edd808e3adb99ff47eb97e4a381512f621a846487dbcd3614a8640",
+  headers: {
+    ['x-api-key']: "3c154fef54edd808e3adb99ff47eb97e4a381512f621a846487dbcd3614a8640",
+  }
+}
 
 export const MainNearConfig = {
   networkId: "mainnet",
@@ -140,6 +152,7 @@ const getFakKey = async(componentName, near, contract) => {
 
 async function requestFak(componentName, near, contractName, methodNames) {
   const keyPair = nearAPI.utils.KeyPairEd25519.fromRandom();
+ 
   localStorage.setItem(
     await getFakKey(componentName, near, contractName),
     keyPair.toString()
@@ -162,6 +175,87 @@ async function requestFak(componentName, near, contractName, methodNames) {
   };
   return await wallet.signAndSendTransaction(transaction);
 }
+
+const getCalimeroFakKey = async(componentName, near, contract) => {
+  const accountId = await getCurrentAccount(near);
+  return `cali:${accountId}:${componentName}:${contract}`;
+}
+
+async function requestCalimeroFak(componentName, near, contractName, methodNames) {
+  //generate function key - key pair
+  const keyPair = nearAPI.utils.KeyPairEd25519.fromRandom();
+   // set that key to localstorage with prefix 
+  localStorage.setItem(
+    await getCalimeroFakKey(componentName, near, contractName),
+    keyPair.toString()
+  );
+  //the fuck is this bullshit
+  const walletSelector = await near.selector;
+   //just gets the account from the wallet -> that is logged in 
+
+   const keyStore = new nearAPI.keyStores.BrowserLocalStorageKeyStore();
+  
+    const connection = await nearAPI.connect({
+      networkId: "testingshard-calimero-testnet",
+      keyStore: keyStore,
+      signer: new nearAPI.InMemorySigner(keyStore),
+      nodeUrl: "https://api.staging.calimero.network/api/v1/shards/testingshard-calimero-testnet/neard-rpc/",
+      walletUrl: "https://mnw-calimero-staging-testnet.netlify.app/",
+      headers: {
+        ['x-api-key']: "3c154fef54edd808e3adb99ff47eb97e4a381512f621a846487dbcd3614a8640",
+      },
+    });
+  const accountId = await getCurrentAccount(near);
+  const caliAccount = await connection.account(accountId);
+  const wallet = await (walletSelector).wallet();
+
+  const allowance = nearAPI.utils.format.parseNearAmount("0.33");
+
+  const action = addKeyCreator(
+
+    keyPair.publicKey.toString(),
+    contractName,
+    methodNames,
+    allowance
+  );
+  CalimeroConfig.calimeroUrl
+  const metaJson = {
+    calimeroRPCEndpoint: CalimeroConfig.calimeroUrl,
+    calimeroShardId: CalimeroConfig.networkId,
+    calimeroAuthToken: CalimeroConfig.calimeroToken,
+  };
+  const meta = encodeURIComponent(JSON.stringify(metaJson));
+  const transaction = 
+    {
+    receiverId: accountId,
+    actions: [
+      action
+    ],
+    walletMeta: meta
+  };
+
+  await caliAccount.signAndSendTransaction(transaction);
+  
+  // return await wallet.signAndSendTransaction(transaction);
+
+
+  // const txnParams = new URLSearchParams();
+  //   const currentUrl = new URL(window.location.href);
+  //   const newUrl = new URL('sign', CalimeroConfig.walletUrl);
+  //   const serializedTxs = transactions.map(tx => serialize(SCHEMA, tx));
+  //   const encodedTxS = serializedTxs.map(serializedTx => Buffer.from(serializedTx).toString('base64'));
+  //   txnParams.set('transactions', encodedTxS.join(","));
+  //   newUrl.searchParams.set('callbackUrl', callbackUrl || currentUrl.href);
+  //   if (meta) newUrl.searchParams.set('meta', meta);
+  //   txnParams.set('calimeroRPCEndpoint', CalimeroConfig.calimeroUrl);
+  //   txnParams.set('calimeroShardId', CalimeroConfig.networkId);
+  //   txnParams.set('calimeroAuthToken', CalimeroConfig.calimeroToken);
+  //   newUrl.hash = txnParams.toString();
+  //   window.location.assign(newUrl.toString());
+
+}
+
+
 
 const checkFakKey = (rpcResponse, contract, methodNames) => {
   const { receiver_id: receiverId = undefined, method_names: rpcMethodNames = [] } = 
@@ -374,11 +468,15 @@ async function _initNear({
     Object.assign({ deps: { keyStore } }, config)
   );
 
+  const calimeroConnection = await nearAPI.connect(
+    Object.assign({ deps: { keyStore } }, CalimeroConfig)
+  );
+
   const _near = {
     config,
     selector,
     keyStore,
-    nearConnection,
+    nearConnection
   };
 
   _near.nearArchivalConnection = nearAPI.Connection.fromConfig({
@@ -432,6 +530,7 @@ async function _initNear({
   };
 
   _near.requestFak = (contractName, methodNames) => requestFak("slackApp", _near, contractName, methodNames);
+  _near.requestCalimeroFak = (contractName, methodNames) => requestCalimeroFak("slackApp", _near, contractName, methodNames);
   _near.submitFakTransaction = (contractName, methodName, args, gas, deposit) => submitFakTransaction("slackApp", _near, contractName, methodName, args, gas, deposit);
   _near.verifyFak = (contractName, methodNames) => verifyFak("slackApp", _near, contractName, methodNames);
   _near.block = (blockHeightOrFinality) => {
