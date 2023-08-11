@@ -3,8 +3,6 @@ import Big from "big.js";
 import { useEffect, useMemo, useState } from "react";
 import { singletonHook } from "react-singleton-hook";
 import { MaxGasPerTransaction, TGas } from "./utils";
-import { SCHEMA } from 'near-api-js/lib/transaction';
-import { serialize } from 'borsh';
 
 const UseLegacyFunctionCallCreator = true;
 export const functionCallCreator = UseLegacyFunctionCallCreator
