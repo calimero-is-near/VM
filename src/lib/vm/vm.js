@@ -765,6 +765,21 @@ class VmStack {
           blockId,
           maybeSubscribe(subscribe, blockId)
         );
+      } else if (keyword === "Near" && callee === "calimeroView") {
+        if (args.length < 2) {
+          throw new Error(
+            "Method: Near.view. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality', 'subscribe'"
+          );
+        }
+        const [contractName, methodName, viewArg, blockId, subscribe] = args;
+
+        return this.vm.cachedCalimeroView(
+          contractName,
+          methodName,
+          viewArg,
+          blockId,
+          maybeSubscribe(subscribe, blockId)
+        );
       } else if (keyword === "Near" && callee === "asyncView") {
         if (args.length < 2) {
           throw new Error(
@@ -1884,6 +1899,20 @@ export default class VM {
     return this.cachedPromise(
       (invalidate) =>
         this.cache.cachedViewCall(
+          this.near,
+          contractName,
+          methodName,
+          args,
+          blockId,
+          invalidate
+        ),
+      subscribe
+    );
+  }
+  cachedCalimeroView(contractName, methodName, args, blockId, subscribe) {
+    return this.cachedPromise(
+      (invalidate) =>
+        this.cache.cachedCalimeroViewCall(
           this.near,
           contractName,
           methodName,
