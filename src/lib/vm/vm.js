@@ -787,6 +787,13 @@ class VmStack {
           );
         }
         return this.vm.asyncNearView(...args);
+      } else if (keyword === "Near" && callee === "asyncCalimeroView") {
+        if (args.length < 2) {
+          throw new Error(
+            "Method: Near.asyncView. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality'"
+          );
+        }
+        return this.vm.asyncCalimeroView(...args);
       } else if (keyword === "Near" && callee === "block") {
         const [blockId, subscribe] = args;
         return this.vm.cachedNearBlock(
@@ -1880,6 +1887,10 @@ export default class VM {
 
   asyncNearView(contractName, methodName, args, blockId) {
     return this.near.viewCall(contractName, methodName, args, blockId);
+  }
+
+  asyncCalimeroView(contractName, methodName, args, blockId) {
+    return this.near.viewCalimero(contractName, methodName, args, blockId);
   }
 
   cachedEthersCall(callee, args, subscribe) {
