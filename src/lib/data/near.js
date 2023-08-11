@@ -47,10 +47,7 @@ const CalimeroConfig = {
   networkId: "testingshard-calimero-testnet",
   calimeroUrl: "https://api.staging.calimero.network/api/v1/shards/testingshard-calimero-testnet/neard-rpc/",
   walletUrl: "https://mnw-calimero-staging-testnet.netlify.app/",
-  calimeroToken: "3c154fef54edd808e3adb99ff47eb97e4a381512f621a846487dbcd3614a8640",
-  headers: {
-    ['x-api-key']: "3c154fef54edd808e3adb99ff47eb97e4a381512f621a846487dbcd3614a8640",
-  }
+  calimeroToken: "9820861bf73e846bb97b6d4453a9e05e69ddb1c7938093be2073b99ca9af1204",
 }
 
 export const MainNearConfig = {
@@ -182,80 +179,61 @@ const getCalimeroFakKey = async(componentName, near, contract) => {
 }
 
 async function requestCalimeroFak(componentName, near, contractName, methodNames) {
-  //generate function key - key pair
-  const keyPair = nearAPI.utils.KeyPairEd25519.fromRandom();
-   // set that key to localstorage with prefix 
-  localStorage.setItem(
-    await getCalimeroFakKey(componentName, near, contractName),
-    keyPair.toString()
-  );
-  //the fuck is this bullshit
-  const walletSelector = await near.selector;
-   //just gets the account from the wallet -> that is logged in 
+    const currentUrl = new URL(window.location.href);
+    const newUrl = new URL(CalimeroConfig.walletUrl + "/login/");
+    newUrl.searchParams.set('success_url', currentUrl.href);
+    newUrl.searchParams.set('failure_url', currentUrl.href);
+    const hashParams = new URLSearchParams();
+    if (contractName) {
+      const contractAccount = await near.calimeroConnection.account(contractName);
+      await contractAccount.state();
 
-   const keyStore = new nearAPI.keyStores.BrowserLocalStorageKeyStore();
-  
-    const connection = await nearAPI.connect({
-      networkId: "testingshard-calimero-testnet",
-      keyStore: keyStore,
-      signer: new nearAPI.InMemorySigner(keyStore),
-      nodeUrl: "https://api.staging.calimero.network/api/v1/shards/testingshard-calimero-testnet/neard-rpc/",
-      walletUrl: "https://mnw-calimero-staging-testnet.netlify.app/",
-      headers: {
-        ['x-api-key']: "3c154fef54edd808e3adb99ff47eb97e4a381512f621a846487dbcd3614a8640",
-      },
-    });
-  const accountId = await getCurrentAccount(near);
-  const caliAccount = await connection.account(accountId);
-  const wallet = await (walletSelector).wallet();
+      newUrl.searchParams.set('contract_id', contractName);
+      const accessKey = nearAPI.utils.KeyPairEd25519.fromRandom();
+      newUrl.searchParams.set('public_key', accessKey.getPublicKey().toString());
+      await near.keyStore.setKey(CalimeroConfig.networkId, componentName+"-cali" + accessKey.getPublicKey(), accessKey);
+      localStorage.setItem(
+        await getCalimeroFakKey(componentName, near, contractName),
+        accessKey
+      );
+    }
 
-  const allowance = nearAPI.utils.format.parseNearAmount("0.33");
+    if (methodNames) {
+      methodNames.forEach(methodName => {
+        newUrl.searchParams.append('methodNames', methodName);
+      });
+    }
 
-  const action = addKeyCreator(
-
-    keyPair.publicKey.toString(),
-    contractName,
-    methodNames,
-    allowance
-  );
-  CalimeroConfig.calimeroUrl
-  const metaJson = {
-    calimeroRPCEndpoint: CalimeroConfig.calimeroUrl,
-    calimeroShardId: CalimeroConfig.networkId,
-    calimeroAuthToken: CalimeroConfig.calimeroToken,
-  };
-  const meta = encodeURIComponent(JSON.stringify(metaJson));
-  const transaction = 
-    {
-    receiverId: accountId,
-    actions: [
-      action
-    ],
-    walletMeta: meta
-  };
-
-  await caliAccount.signAndSendTransaction(transaction);
-  
-  // return await wallet.signAndSendTransaction(transaction);
-
-
-  // const txnParams = new URLSearchParams();
-  //   const currentUrl = new URL(window.location.href);
-  //   const newUrl = new URL('sign', CalimeroConfig.walletUrl);
-  //   const serializedTxs = transactions.map(tx => serialize(SCHEMA, tx));
-  //   const encodedTxS = serializedTxs.map(serializedTx => Buffer.from(serializedTx).toString('base64'));
-  //   txnParams.set('transactions', encodedTxS.join(","));
-  //   newUrl.searchParams.set('callbackUrl', callbackUrl || currentUrl.href);
-  //   if (meta) newUrl.searchParams.set('meta', meta);
-  //   txnParams.set('calimeroRPCEndpoint', CalimeroConfig.calimeroUrl);
-  //   txnParams.set('calimeroShardId', CalimeroConfig.networkId);
-  //   txnParams.set('calimeroAuthToken', CalimeroConfig.calimeroToken);
-  //   newUrl.hash = txnParams.toString();
-  //   window.location.assign(newUrl.toString());
-
+    hashParams.set('calimeroRPCEndpoint', CalimeroConfig.calimeroUrl);
+    hashParams.set('calimeroAuthToken', CalimeroConfig.calimeroToken);
+    hashParams.set('calimeroShardId', CalimeroConfig.networkId);
+    newUrl.hash = hashParams.toString();
+    window.location.assign(newUrl.toString());
 }
 
-
+async function verifyCalimeroFak(componentName, near, contractName, methods) {
+  const key = localStorage.getItem(
+    await getCalimeroFakKey(componentName, near, contractName)
+  );
+  if(!key) {
+    return false;
+  }
+  const accountId = await getCurrentAccount(near);
+  const keyPair = nearAPI.KeyPair.fromString(key);
+  const params = {
+    request_type: "view_access_key",
+    finality: "final",
+    account_id: accountId,
+    public_key: keyPair.publicKey.toString(),
+  };
+  try{
+    const result = await near.calimeroConnection.connection.provider.query(params);
+    return checkFakKey(result, contractName, methods);
+  } catch(e) {
+    console.error(e);
+    return false;
+  }
+}
 
 const checkFakKey = (rpcResponse, contract, methodNames) => {
   const { receiver_id: receiverId = undefined, method_names: rpcMethodNames = [] } = 
@@ -276,6 +254,36 @@ const checkFakKey = (rpcResponse, contract, methodNames) => {
     return false;
   }
   return true;
+}
+
+async function submitFakCalimeroTransaction(componentName, near, contractName, methodName, args, gas, deposit) {
+  const key = localStorage.getItem(
+    await getCalimeroFakKey(componentName, near, contractName)
+  );
+  if(!key) {
+    throw new Error(
+      "Method: Near.fakCalimeroCall. Requires requestAccessKey to be called first"
+    );
+  }
+  const accountId = await getCurrentAccount(near);
+  const provider = new nearAPI.providers.JsonRpcProvider({ url: CalimeroConfig.nodeUrl });
+
+  const keyStore = new nearAPI.keyStores.InMemoryKeyStore();
+  const keyPair = nearAPI.KeyPair.fromString(key);
+  keyStore.setKey(CalimeroConfig.networkId, accountId, keyPair);
+
+  const account = new nearAPI.Account({
+    provider,
+    signer: new nearAPI.InMemorySigner(keyStore),
+    networkId: CalimeroConfig.networkId,
+  }, accountId);
+
+  const contract = new nearAPI.Contract(
+    account,
+    contractName,
+    { changeMethods: [methodName], viewMethods: []}
+  );
+  return await contract[methodName]({ ...args }, gas?.toFixed(0), deposit?.toFixed(0));
 }
 
 async function submitFakTransaction(componentName, near, contractName, methodName, args, gas, deposit) {
@@ -307,7 +315,6 @@ async function submitFakTransaction(componentName, near, contractName, methodNam
   );
   return await contract[methodName]({ ...args }, gas?.toFixed(0), deposit?.toFixed(0));
 }
-
 async function verifyFak(componentName, near, contractName, methods) {
   const key = localStorage.getItem(
     await getFakKey(componentName, near, contractName)
@@ -469,14 +476,24 @@ async function _initNear({
   );
 
   const calimeroConnection = await nearAPI.connect(
-    Object.assign({ deps: { keyStore } }, CalimeroConfig)
+    {
+      networkId: CalimeroConfig.networkId,
+      keyStore: keyStore,
+      signer: new nearAPI.InMemorySigner(keyStore),
+      nodeUrl: CalimeroConfig.calimeroUrl,
+      walletUrl: CalimeroConfig.walletUrl,
+      headers: {
+        ['x-api-key']: CalimeroConfig.calimeroToken,
+      },
+    }
   );
 
   const _near = {
     config,
     selector,
     keyStore,
-    nearConnection
+    nearConnection,
+    calimeroConnection
   };
 
   _near.nearArchivalConnection = nearAPI.Connection.fromConfig({
@@ -532,7 +549,9 @@ async function _initNear({
   _near.requestFak = (contractName, methodNames) => requestFak("slackApp", _near, contractName, methodNames);
   _near.requestCalimeroFak = (contractName, methodNames) => requestCalimeroFak("slackApp", _near, contractName, methodNames);
   _near.submitFakTransaction = (contractName, methodName, args, gas, deposit) => submitFakTransaction("slackApp", _near, contractName, methodName, args, gas, deposit);
+  _near.submitFakCalimeroTransaction = (contractName, methodName, args, gas, deposit) => submitFakCalimeroTransaction("slackApp", _near, contractName, methodName, args, gas, deposit);
   _near.verifyFak = (contractName, methodNames) => verifyFak("slackApp", _near, contractName, methodNames);
+  _near.verifyCalimeroFak = (contractName, methodNames) => verifyCalimeroFak("slackApp", _near, contractName, methodNames);
   _near.block = (blockHeightOrFinality) => {
     const blockQuery = transformBlockId(blockHeightOrFinality);
     const provider = blockQuery.blockId
