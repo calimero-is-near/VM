@@ -806,11 +806,13 @@ class VmStack {
             },
           ]);
         }
-      } else if(keyword === "Near" && callee === "requestFak") {
+      } else if (keyword === "Near" && callee === "requestFak") {
         return this.vm.near.requestFak(...args);
-      } else if(keyword === "Near" && callee === "hasValidFak") {
+      } else if (keyword === "Near" && callee === "requestCalimeroFak") {
+        return this.vm.near.requestCalimeroFak(...args);
+      } else if (keyword === "Near" && callee === "hasValidFak") {
         return this.vm.near.verifyFak(...args);
-      } else if(keyword === "Near" && callee === "fakCall") {
+      } else if (keyword === "Near" && callee === "fakCall") {
         if (args.length < 2 || args.length > 5) {
           throw new Error(
             "Method: Near.call. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
@@ -821,7 +823,7 @@ class VmStack {
           args[1],
           args[2] ?? {},
           args[3],
-          args[4],
+          args[4]
         );
       } else if (callee === "fetch") {
         if (args.length < 1) {
