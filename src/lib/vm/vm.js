@@ -831,9 +831,9 @@ class VmStack {
       } else if (keyword === "Near" && callee === "requestFak") {
         return this.vm.near.requestFak(...args);
       } else if (keyword === "Near" && callee === "requestCalimeroFak") {
-        return this.vm.near.requestCalimeroFak(...args);
+        return this.vm.near.requestCalimeroFak(this.vm.widgetSrc, ...args);
       } else if (keyword === "Near" && callee === "hasValidCalimeroFak") {
-        return this.vm.near.verifyCalimeroFak(...args);
+        return this.vm.near.verifyCalimeroFak(this.vm.widgetSrc, ...args);
       } else if (keyword === "Near" && callee === "hasValidFak") {
         return this.vm.near.verifyFak(...args);
       } else if (keyword === "Near" && callee === "fakCalimeroCall") {
@@ -843,6 +843,7 @@ class VmStack {
           );
         }
         return this.vm.near.submitCalimeroFakTransaction(
+          this.vm.widgetSrc,
           args[0],
           args[1],
           args[2] ?? {},
