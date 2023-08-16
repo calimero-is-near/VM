@@ -147,7 +147,6 @@ const getFakKey = async(componentName, near, contract) => {
 
 async function requestFak(componentName, near, contractName, methodNames) {
   const keyPair = nearAPI.utils.KeyPairEd25519.fromRandom();
- 
   localStorage.setItem(
     await getFakKey(componentName, near, contractName),
     keyPair.toString()
@@ -269,21 +268,10 @@ async function submitFakCalimeroTransaction(componentName, near, contractName, m
   const keyStore = new nearAPI.keyStores.InMemoryKeyStore();
   const keyPair = nearAPI.KeyPair.fromString(key);
   keyStore.setKey(CalimeroConfig.networkId, accountId, keyPair);
+  near.calimeroConnection.connection.keyStore = keyStore;
+  near.calimeroConnection.connection.signer = new nearAPI.InMemorySigner(keyStore);
 
-  const calimeroConnection = await nearAPI.connect(
-    {
-      networkId: CalimeroConfig.networkId,
-      keyStore: keyStore,
-      signer: new nearAPI.InMemorySigner(keyStore),
-      nodeUrl: CalimeroConfig.calimeroUrl,
-      walletUrl: CalimeroConfig.walletUrl,
-      headers: {
-        ['x-api-key']: CalimeroConfig.calimeroToken,
-      },
-    }
-  );
-
-  const account = await calimeroConnection.account(accountId);
+  const account = await near.calimeroConnection.account(accountId);
 
   const contract = new nearAPI.Contract(
     account,
