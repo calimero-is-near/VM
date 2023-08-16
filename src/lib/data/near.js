@@ -560,11 +560,11 @@ async function _initNear({
 
 
   _near.requestFak = (contractName, methodNames) => requestFak("slackApp", _near, contractName, methodNames);
-  _near.requestCalimeroFak = (contractName, methodNames) => requestCalimeroFak("slackApp", _near, contractName, methodNames);
+  _near.requestCalimeroFak = (componentName, contractName, methodNames) => requestCalimeroFak(componentName, _near, contractName, methodNames);
   _near.submitFakTransaction = (contractName, methodName, args, gas, deposit) => submitFakTransaction("slackApp", _near, contractName, methodName, args, gas, deposit);
-  _near.submitCalimeroFakTransaction = (contractName, methodName, args, gas, deposit) => submitFakCalimeroTransaction("slackApp", _near, contractName, methodName, args, gas, deposit);
+  _near.submitCalimeroFakTransaction = (componentName, contractName, methodName, args, gas, deposit) => submitFakCalimeroTransaction(componentName, _near, contractName, methodName, args, gas, deposit);
   _near.verifyFak = (contractName, methodNames) => verifyFak("slackApp", _near, contractName, methodNames);
-  _near.verifyCalimeroFak = (contractName, methodNames) => verifyCalimeroFak("slackApp", _near, contractName, methodNames);
+  _near.verifyCalimeroFak = (componentName, contractName, methodNames) => verifyCalimeroFak(componentName, _near, contractName, methodNames);
   _near.block = (blockHeightOrFinality) => {
     const blockQuery = transformBlockId(blockHeightOrFinality);
     const provider = blockQuery.blockId
