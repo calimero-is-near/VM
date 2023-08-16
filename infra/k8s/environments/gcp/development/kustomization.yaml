@@ -2,8 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: frontend
 configMapGenerator:
-- files:
-  - .env
+- 
+  literals:
+    - NEXT_PUBLIC_NETWORK_ID=testnet
+    - NEXT_PUBLIC_HOSTNAME=https://cali-bos.euw3.dev.gcp.calimero.network
   name: cali-bos
 resources:
 - ../../../base-0.0.0
