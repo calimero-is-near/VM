@@ -4,11 +4,14 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 RUN apt-get update && apt-get install python3.10 -y
 
-COPY config /VM/src
-COPY .babelrc /VM/.babelrc
-COPY package.json /VM/package.json
-COPY webpack.config.js /VM/webpack.config.js
-COPY yarn.lock /VM/yarn.lock
+RUN ls -al
+RUN ls -al ..
+
+COPY ./config /VM/src
+COPY ./.babelrc /VM/.babelrc
+COPY ./package.json /VM/package.json
+COPY ./webpack.config.js /VM/webpack.config.js
+COPY ./yarn.lock /VM/yarn.lock
 WORKDIR /VM
 
 RUN yarn && yarn install && yarn run build
