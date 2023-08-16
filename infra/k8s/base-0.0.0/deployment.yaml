@@ -44,11 +44,6 @@ spec:
               memory: 128Mi
             limits:
               memory: 512Mi
-          volumeMounts:
-            - name: config-volume
-              mountPath: /near-discovery/.env
-              subPath: .env
-      volumes:
-        - name: config-volume
-          configMap:
-            name: cali-bos
+          envFrom:
+            - configMapRef:
+                name: cali-bos
