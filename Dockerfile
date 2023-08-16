@@ -40,11 +40,9 @@ RUN pnpm remove near-social-vm && pnpm add file:../VM && pnpm i && pnpm build
 COPY VM/.env.production /near-discovery/.env.production
 COPY VM/entrypoint.sh /near-discovery/entrypoint.sh
 
-RUN ["chmod", "+x", "./entrypoint.sh"]
-ENTRYPOINT ["./entrypoint.sh"]
-
 EXPOSE 3000
 ENV PORT 3000
 
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["node_modules/.bin/next", "start"]
 ######################### End near-discovery #########################
