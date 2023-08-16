@@ -4,16 +4,15 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 RUN apt-get update && apt-get install python3.10 -y
 
-WORKDIR /VM
 COPY config /VM/src
 COPY .babelrc /VM/.babelrc
 COPY package.json /VM/package.json
 COPY webpack.config.js /VM/webpack.config.js
 COPY yarn.lock /VM/yarn.lock
+WORKDIR /VM
 
 RUN yarn && yarn install && yarn run build
 
-WORKDIR /near-discovery
 COPY ../near-discovery/public /near-discovery/public
 COPY ../near-discovery/src /near-discovery/src
 COPY ../near-discovery/types /near-discovery/types
@@ -30,6 +29,7 @@ COPY ../near-discovery/tsconfig.json /near-discovery/tsconfig.json
 
 COPY .env.production /near-discovery/.env.production
 COPY entrypoint.sh /near-discovery/entrypoint.sh
+WORKDIR /near-discovery
 
 RUN pnpm remove near-social-vm && pnpm add file:../VM && pnpm i && pnpm build
 
