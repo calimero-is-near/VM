@@ -861,7 +861,7 @@ class VmStack {
           args[2] ?? {},
           args[3],
           args[4]
-        ); //tu
+        );
       } else if (callee === "fetch") {
         if (args.length < 1) {
           throw new Error(
