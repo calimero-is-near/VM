@@ -42,10 +42,10 @@ const TestNearConfig = {
 };
 
 const CalimeroConfig = {
-  networkId: "testingshard-calimero-testnet",
-  calimeroUrl: "https://api.staging.calimero.network/api/v1/shards/testingshard-calimero-testnet/neard-rpc/",
+  networkId: `${process.env.NEXT_PUBLIC_SHARD_ID}`,
+  calimeroUrl:`https://api.staging.calimero.network/api/v1/shards/${process.env.NEXT_PUBLIC_SHARD_ID}/neard-rpc/`,
   walletUrl: "https://mnw-calimero-staging-testnet.netlify.app/",
-  calimeroToken: "9820861bf73e846bb97b6d4453a9e05e69ddb1c7938093be2073b99ca9af1204",
+  calimeroToken: `${process.env.NEXT_PUBLIC_CALIMERO_TOKEN}`,
 }
 
 export const MainNearConfig = {
