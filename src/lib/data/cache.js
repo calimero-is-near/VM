@@ -237,6 +237,19 @@ class Cache {
       cacheOptions
     );
   }
+  cachedCalimeroViewCall(near, contractId, methodName, args, blockId, invalidate) {
+    return this.cachedPromise(
+      {
+        action: Action.ViewCall,
+        contractId,
+        methodName,
+        args,
+        blockId,
+      },
+      () => near.viewCalimero(contractId, methodName, args, blockId),
+      invalidate
+    );
+  }
 
   async asyncFetch(url, options) {
     const responseType = options?.responseType?.toLowerCase();
