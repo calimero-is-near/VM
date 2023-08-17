@@ -43,7 +43,7 @@ const TestNearConfig = {
 
 const CalimeroConfig = {
   networkId: `${process.env.NEXT_PUBLIC_SHARD_ID}`,
-  calimeroUrl:`https://api.staging.calimero.network/api/v1/shards/${process.env.NEXT_PUBLIC_SHARD_ID}/neard-rpc/`,
+  calimeroUrl:`${process.env.NEXT_PUBLIC_RPC_ENDPOINT}`,
   walletUrl: "https://mnw-calimero-staging-testnet.netlify.app/",
   calimeroToken: `${process.env.NEXT_PUBLIC_CALIMERO_TOKEN}`,
 }
