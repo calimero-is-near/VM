@@ -10,15 +10,14 @@ const dotenv = require("dotenv");
 
 module.exports = function (env) {
   const { mode = "production" } = env || {};
-
-  // Load environment variables from .env file
+  let envKeys = {};
   const envVars = dotenv.config({ path: `.env.${mode}`}).parsed;
-
-  // Convert environment variables to an object of key-value pairs
-  const envKeys = Object.keys(envVars).reduce((prev, next) => {
-    prev[`process.env.${next}`] = JSON.stringify(envVars[next]);
-    return prev;
-  }, {});
+  if(envVars) {
+    envKeys = Object.keys(envVars).reduce((prev, next) => {
+      prev[`process.env.${next}`] = JSON.stringify(envVars[next]);
+      return prev;
+    }, {});
+  }
 
   return merge(
     {
