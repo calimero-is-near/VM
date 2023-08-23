@@ -3,8 +3,8 @@ kind: Kustomization
 namespace: frontend
 resources:
   - internal/
-  # - portal/
+  - portal/
 images:
   - name: bos-gateway
     newName: europe-west3-docker.pkg.dev/calimero-ops/calimero/bos-gateway
-    newTag: kurac
+    newTag: ef54364
