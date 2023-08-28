@@ -761,7 +761,13 @@ class VmStack {
         if (args.length < 1) {
           throw new Error("Missing argument 'keys' for Social.getr");
         }
-        return this.vm.cachedSocialGet(args[0], true, args[1], args[2]);
+        return this.vm.cachedSocialGet(
+          args[0],
+          true,
+          args[1],
+          args[2],
+          args[3]
+        );
       } else if (
         (keyword === "Social" && callee === "get") ||
         callee === "socialGet"
@@ -769,19 +775,25 @@ class VmStack {
         if (args.length < 1) {
           throw new Error("Missing argument 'keys' for Social.get");
         }
-        return this.vm.cachedSocialGet(args[0], false, args[1], args[2]);
+        return this.vm.cachedSocialGet(
+          args[0],
+          false,
+          args[1],
+          args[2],
+          args[3]
+        );
       } else if (keyword === "Social" && callee === "keys") {
         if (args.length < 1) {
           throw new Error("Missing argument 'keys' for Social.keys");
         }
-        return this.vm.cachedSocialKeys(args[0], args[1], args[2]);
+        return this.vm.cachedSocialKeys(...args);
       } else if (keyword === "Social" && callee === "index") {
         if (args.length < 2) {
           throw new Error(
             "Missing argument 'action' and 'key` for Social.index"
           );
         }
-        return this.vm.cachedIndex(args[0], args[1], args[2]);
+        return this.vm.cachedIndex(...args);
       } else if (keyword === "Social" && callee === "set") {
         if (args.length < 1) {
           throw new Error("Missing argument 'data' for Social.set");
@@ -790,17 +802,25 @@ class VmStack {
       } else if (keyword === "Near" && callee === "view") {
         if (args.length < 2) {
           throw new Error(
-            "Method: Near.view. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality', 'subscribe'"
+            "Method: Near.view. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality', 'subscribe', 'cacheOptions'"
           );
         }
-        const [contractName, methodName, viewArg, blockId, subscribe] = args;
+        const [
+          contractName,
+          methodName,
+          viewArg,
+          blockId,
+          subscribe,
+          cacheOptions,
+        ] = args;
 
         return this.vm.cachedNearView(
           contractName,
           methodName,
           viewArg,
           blockId,
-          maybeSubscribe(subscribe, blockId)
+          maybeSubscribe(subscribe, blockId),
+          cacheOptions
         );
       } else if (keyword === "Near" && callee === "calimeroView" || keyword === "Calimero" && callee === "view") {
         if (args.length < 2) {
@@ -832,10 +852,11 @@ class VmStack {
         }
         return this.vm.asyncCalimeroView(...args);
       } else if (keyword === "Near" && callee === "block") {
-        const [blockId, subscribe] = args;
+        const [blockId, subscribe, cacheOptions] = args;
         return this.vm.cachedNearBlock(
           blockId,
-          maybeSubscribe(subscribe, blockId)
+          maybeSubscribe(subscribe, blockId),
+          cacheOptions
         );
       } else if (keyword === "Near" && callee === "call") {
         if (args.length === 1) {
@@ -2088,7 +2109,7 @@ export default class VM {
     return deepCopy(promise(invalidate));
   }
 
-  cachedSocialGet(keys, recursive, blockId, options) {
+  cachedSocialGet(keys, recursive, blockId, options, cacheOptions) {
     keys = Array.isArray(keys) ? keys : [keys];
     return this.cachedPromise(
       (invalidate) =>
@@ -2098,7 +2119,8 @@ export default class VM {
           recursive,
           blockId,
           options,
-          invalidate
+          invalidate,
+          cacheOptions
         ),
       options?.subscribe
     );
@@ -2114,7 +2136,7 @@ export default class VM {
     return this.cache.localStorageSet(domain, key, value);
   }
 
-  cachedSocialKeys(keys, blockId, options) {
+  cachedSocialKeys(keys, blockId, options, cacheOptions) {
     keys = Array.isArray(keys) ? keys : [keys];
     return this.cachedPromise(
       (invalidate) =>
@@ -2127,7 +2149,8 @@ export default class VM {
             options,
           },
           blockId,
-          invalidate
+          invalidate,
+          cacheOptions
         ),
       options?.subscribe
     );
@@ -2148,13 +2171,21 @@ export default class VM {
           this.ethersProvider,
           callee,
           args,
-          invalidate
+          invalidate,
+          cacheOptions
         ),
       subscribe
     );
   }
 
-  cachedNearView(contractName, methodName, args, blockId, subscribe) {
+  cachedNearView(
+    contractName,
+    methodName,
+    args,
+    blockId,
+    subscribe,
+    cacheOptions
+  ) {
     return this.cachedPromise(
       (invalidate) =>
         this.cache.cachedViewCall(
@@ -2163,7 +2194,8 @@ export default class VM {
           methodName,
           args,
           blockId,
-          invalidate
+          invalidate,
+          cacheOptions
         ),
       subscribe
     );
@@ -2183,9 +2215,10 @@ export default class VM {
     );
   }
 
-  cachedNearBlock(blockId, subscribe) {
+  cachedNearBlock(blockId, subscribe, cacheOptions) {
     return this.cachedPromise(
-      (invalidate) => this.cache.cachedBlock(this.near, blockId, invalidate),
+      (invalidate) =>
+        this.cache.cachedBlock(this.near, blockId, invalidate, cacheOptions),
       subscribe
     );
   }
@@ -2194,22 +2227,30 @@ export default class VM {
     return this.cache.asyncFetch(url, options);
   }
 
-  cachedFetch(url, options) {
-    return this.cachedPromise(
-      (invalidate) => this.cache.cachedFetch(url, options, invalidate),
-      options?.subscribe
-    );
-  }
-
-  cachedIndex(action, key, options) {
+  cachedFetch(url, options, cacheOptions) {
     return this.cachedPromise(
       (invalidate) =>
-        this.cache.socialIndex(this.near, action, key, options, invalidate),
+        this.cache.cachedFetch(url, options, invalidate, cacheOptions),
       options?.subscribe
     );
   }
 
-  useCache(promiseGenerator, dataKey, options) {
+  cachedIndex(action, key, options, cacheOptions) {
+    return this.cachedPromise(
+      (invalidate) =>
+        this.cache.socialIndex(
+          this.near,
+          action,
+          key,
+          options,
+          invalidate,
+          cacheOptions
+        ),
+      options?.subscribe
+    );
+  }
+
+  useCache(promiseGenerator, dataKey, options, cacheOptions) {
     return this.cachedPromise(
       (invalidate) =>
         this.cache.cachedCustomPromise(
@@ -2218,7 +2259,8 @@ export default class VM {
             dataKey,
           },
           promiseGenerator,
-          invalidate
+          invalidate,
+          cacheOptions
         ),
       options?.subscribe
     );
