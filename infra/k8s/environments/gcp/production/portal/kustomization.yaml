@@ -13,7 +13,7 @@ resources:
 configMapGenerator:
   - literals:
       - NEXT_PUBLIC_NETWORK_ID=mainnet
-      - NEXT_PUBLIC_HOSTNAME=https://internal.calimero.network
+      - NEXT_PUBLIC_HOSTNAME=https://portal.calimero.network
       - NEXT_PUBLIC_CHAIN_ID=community-portal-calimero
       - NEXT_PUBLIC_RPC_ENDPOINT=https://api.calimero.network/api/v1/shards/community-portal-calimero/neard-rpc/
       - NEXT_PUBLIC_WALLET_URL=https://www.mynearwallet.com/

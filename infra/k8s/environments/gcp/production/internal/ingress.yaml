@@ -6,7 +6,7 @@ metadata:
     kubernetes.io/ingress.class: "gce"
     kubernetes.io/ingress.global-static-ip-name: "bos-gateway-internal-euw3"
     networking.gke.io/managed-certificates: "bos-gateway-internal"
-    networking.gke.io/v1beta1.FrontendConfig: "bos-gateway"
+    networking.gke.io/v1beta1.FrontendConfig: "bos-gateway-internal"
 spec:
   rules:
     - host: internal.calimero.network
@@ -18,4 +18,4 @@ spec:
               service:
                 name: bos-gateway-internal
                 port:
-                  number: 80
+                  number: 3000
