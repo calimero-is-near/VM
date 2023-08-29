@@ -19,6 +19,6 @@ configMapGenerator:
       - NEXT_PUBLIC_WALLET_URL=https://www.mynearwallet.com/
     name: bos-gateway
 patches:
-  - path: deployment.yaml
+  - path: deployment-patch.yaml
     target:
       kind: Deployment
