@@ -13,4 +13,4 @@ images:
   newTag: a06c102
 - name: bos-gateway-testnet
   newName: europe-west3-docker.pkg.dev/calimero-ops/calimero/bos-gateway-testnet
-  newTag: 3d280f6
+  newTag: network-id-dotenv.1
