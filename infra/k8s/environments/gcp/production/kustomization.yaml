@@ -10,4 +10,4 @@ images:
   newTag: 2727a02
 - name: bos-gateway-mainnet
   newName: europe-west3-docker.pkg.dev/calimero-ops/calimero/bos-gateway-mainnet
-  newTag: fbozic-multicontainer-1
+  newTag: a06c102
