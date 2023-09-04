@@ -14,7 +14,7 @@ COPY VM/yarn.lock /VM/yarn.lock
 COPY VM/LICENSE /VM/LICENSE
 
 # .env is generated during CI/CD pipeline
-COPY .env /VM/.env
+COPY .env /VM/.env.production
 
 WORKDIR /VM
 RUN yarn && yarn install && yarn run build
@@ -38,7 +38,7 @@ COPY calimero-portal/sentry.server.config.ts /calimero-portal/sentry.server.conf
 COPY calimero-portal/tsconfig.json /calimero-portal/tsconfig.json
 
 # .env is generated during CI/CD pipeline
-COPY .env /calimero-portal/.env
+COPY .env /calimero-portal/.env.production
 
 WORKDIR /calimero-portal
 RUN pnpm remove near-social-vm && pnpm add file:../VM
