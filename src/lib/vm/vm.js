@@ -30,7 +30,7 @@ import BN from "bn.js";
 import * as nacl from "tweetnacl";
 import SecureIframe from "../components/SecureIframe";
 import { nanoid, customAlphabet } from "nanoid";
-import cloneDeep from "lodash.clonedeep";
+import _ from "lodash";
 import { Parser } from "acorn";
 import jsx from "acorn-jsx";
 import { ethers } from "ethers";
@@ -761,13 +761,7 @@ class VmStack {
         if (args.length < 1) {
           throw new Error("Missing argument 'keys' for Social.getr");
         }
-        return this.vm.cachedSocialGet(
-          args[0],
-          true,
-          args[1],
-          args[2],
-          args[3]
-        );
+        return this.vm.cachedSocialGet(args[0], true, args[1], args[2]);
       } else if (
         (keyword === "Social" && callee === "get") ||
         callee === "socialGet"
@@ -775,25 +769,19 @@ class VmStack {
         if (args.length < 1) {
           throw new Error("Missing argument 'keys' for Social.get");
         }
-        return this.vm.cachedSocialGet(
-          args[0],
-          false,
-          args[1],
-          args[2],
-          args[3]
-        );
+        return this.vm.cachedSocialGet(args[0], false, args[1], args[2]);
       } else if (keyword === "Social" && callee === "keys") {
         if (args.length < 1) {
           throw new Error("Missing argument 'keys' for Social.keys");
         }
-        return this.vm.cachedSocialKeys(...args);
+        return this.vm.cachedSocialKeys(args[0], args[1], args[2]);
       } else if (keyword === "Social" && callee === "index") {
         if (args.length < 2) {
           throw new Error(
             "Missing argument 'action' and 'key` for Social.index"
           );
         }
-        return this.vm.cachedIndex(...args);
+        return this.vm.cachedIndex(args[0], args[1], args[2]);
       } else if (keyword === "Social" && callee === "set") {
         if (args.length < 1) {
           throw new Error("Missing argument 'data' for Social.set");
@@ -802,25 +790,17 @@ class VmStack {
       } else if (keyword === "Near" && callee === "view") {
         if (args.length < 2) {
           throw new Error(
-            "Method: Near.view. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality', 'subscribe', 'cacheOptions'"
+            "Method: Near.view. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality', 'subscribe'"
           );
         }
-        const [
-          contractName,
-          methodName,
-          viewArg,
-          blockId,
-          subscribe,
-          cacheOptions,
-        ] = args;
+        const [contractName, methodName, viewArg, blockId, subscribe] = args;
 
         return this.vm.cachedNearView(
           contractName,
           methodName,
           viewArg,
           blockId,
-          maybeSubscribe(subscribe, blockId),
-          cacheOptions
+          maybeSubscribe(subscribe, blockId)
         );
       } else if (keyword === "Near" && callee === "calimeroView" || keyword === "Calimero" && callee === "view") {
         if (args.length < 2) {
@@ -852,11 +832,10 @@ class VmStack {
         }
         return this.vm.asyncCalimeroView(...args);
       } else if (keyword === "Near" && callee === "block") {
-        const [blockId, subscribe, cacheOptions] = args;
+        const [blockId, subscribe] = args;
         return this.vm.cachedNearBlock(
           blockId,
-          maybeSubscribe(subscribe, blockId),
-          cacheOptions
+          maybeSubscribe(subscribe, blockId)
         );
       } else if (keyword === "Near" && callee === "call") {
         if (args.length === 1) {
@@ -2103,7 +2082,7 @@ export default class VM {
     return deepCopy(promise(invalidate));
   }
 
-  cachedSocialGet(keys, recursive, blockId, options, cacheOptions) {
+  cachedSocialGet(keys, recursive, blockId, options) {
     keys = Array.isArray(keys) ? keys : [keys];
     return this.cachedPromise(
       (invalidate) =>
@@ -2113,8 +2092,7 @@ export default class VM {
           recursive,
           blockId,
           options,
-          invalidate,
-          cacheOptions
+          invalidate
         ),
       options?.subscribe
     );
@@ -2130,7 +2108,7 @@ export default class VM {
     return this.cache.localStorageSet(domain, key, value);
   }
 
-  cachedSocialKeys(keys, blockId, options, cacheOptions) {
+  cachedSocialKeys(keys, blockId, options) {
     keys = Array.isArray(keys) ? keys : [keys];
     return this.cachedPromise(
       (invalidate) =>
@@ -2143,8 +2121,7 @@ export default class VM {
             options,
           },
           blockId,
-          invalidate,
-          cacheOptions
+          invalidate
         ),
       options?.subscribe
     );
@@ -2165,21 +2142,13 @@ export default class VM {
           this.ethersProvider,
           callee,
           args,
-          invalidate,
-          cacheOptions
+          invalidate
         ),
       subscribe
     );
   }
 
-  cachedNearView(
-    contractName,
-    methodName,
-    args,
-    blockId,
-    subscribe,
-    cacheOptions
-  ) {
+  cachedNearView(contractName, methodName, args, blockId, subscribe) {
     return this.cachedPromise(
       (invalidate) =>
         this.cache.cachedViewCall(
@@ -2188,8 +2157,7 @@ export default class VM {
           methodName,
           args,
           blockId,
-          invalidate,
-          cacheOptions
+          invalidate
         ),
       subscribe
     );
@@ -2209,10 +2177,9 @@ export default class VM {
     );
   }
 
-  cachedNearBlock(blockId, subscribe, cacheOptions) {
+  cachedNearBlock(blockId, subscribe) {
     return this.cachedPromise(
-      (invalidate) =>
-        this.cache.cachedBlock(this.near, blockId, invalidate, cacheOptions),
+      (invalidate) => this.cache.cachedBlock(this.near, blockId, invalidate),
       subscribe
     );
   }
@@ -2221,30 +2188,22 @@ export default class VM {
     return this.cache.asyncFetch(url, options);
   }
 
-  cachedFetch(url, options, cacheOptions) {
+  cachedFetch(url, options) {
     return this.cachedPromise(
-      (invalidate) =>
-        this.cache.cachedFetch(url, options, invalidate, cacheOptions),
+      (invalidate) => this.cache.cachedFetch(url, options, invalidate),
       options?.subscribe
     );
   }
 
-  cachedIndex(action, key, options, cacheOptions) {
+  cachedIndex(action, key, options) {
     return this.cachedPromise(
       (invalidate) =>
-        this.cache.socialIndex(
-          this.near,
-          action,
-          key,
-          options,
-          invalidate,
-          cacheOptions
-        ),
+        this.cache.socialIndex(this.near, action, key, options, invalidate),
       options?.subscribe
     );
   }
 
-  useCache(promiseGenerator, dataKey, options, cacheOptions) {
+  useCache(promiseGenerator, dataKey, options) {
     return this.cachedPromise(
       (invalidate) =>
         this.cache.cachedCustomPromise(
@@ -2253,8 +2212,7 @@ export default class VM {
             dataKey,
           },
           promiseGenerator,
-          invalidate,
-          cacheOptions
+          invalidate
         ),
       options?.subscribe
     );
@@ -2356,7 +2314,7 @@ export default class VM {
       nacl: frozenNacl,
       get elliptic() {
         delete this.elliptic;
-        this.elliptic = cloneDeep(elliptic);
+        this.elliptic = _.cloneDeep(elliptic);
         return this.elliptic;
       },
       ethers: frozenEthers,
