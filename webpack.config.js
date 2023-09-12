@@ -74,7 +74,8 @@ module.exports = function (env) {
           stream: require.resolve("stream-browserify"),
         },
       },
-      target: "node",
+      target: "node", // Changing target from "node" to "web"
+      devtool: mode === "production" ? "source-map" : "eval-source-map", // Adding source maps
       plugins: [
         new webpack.DefinePlugin(envKeys), // Define environment variables
         new CleanWebpackPlugin(),

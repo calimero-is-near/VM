@@ -107,7 +107,8 @@
   "scripts": {
     "webpack": "webpack",
     "prod": "npm run webpack -- --env mode=production",
-    "build": "npm run prod"
+    "dev": "npm run webpack -- --env mode=development",
+    "build": "npm run dev"
   },
   "eslintConfig": {
     "extends": [
