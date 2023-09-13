@@ -260,6 +260,7 @@ const Keywords = {
   VM: true,
   Calimero: true,
   Crypto: true,
+  Promise,
 };
 
 const NativeFunctions = {
@@ -1381,6 +1382,13 @@ class VmStack {
       ) {
         const keyword = code.object.name;
         if (keyword in Keywords) {
+          // Special case for Promise.all and Promise.any
+          if (keyword === 'Promise' && ['all', 'any'].includes(code.property.name)) {
+            return {
+              obj: Promise,  // Return the Promise object itself
+              key: code.property.name
+            };
+           }
           if (!options?.callee) {
             throw new Error(
               "Cannot dereference keyword '" +
