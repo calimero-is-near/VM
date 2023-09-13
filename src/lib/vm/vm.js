@@ -7,6 +7,7 @@ import {
   ipfsUpload,
   ipfsUrl,
   isArray,
+  isFunction,
   isObject,
   isReactObject,
   isString,
@@ -31,7 +32,12 @@ import { nanoid, customAlphabet } from "nanoid";
 import _ from "lodash";
 import { Parser } from "acorn";
 import jsx from "acorn-jsx";
+<<<<<<< HEAD
 import * as nearAPI from "near-api-js";
+=======
+import { ethers } from "ethers";
+import { Web3ConnectButton } from "../components/ethers";
+>>>>>>> 90b415f (Replace isFunction import)
 
 // Radix:
 import * as Accordion from "@radix-ui/react-accordion";
@@ -61,9 +67,6 @@ import * as Toggle from "@radix-ui/react-toggle";
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import * as Toolbar from "@radix-ui/react-toolbar";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
-import { ethers } from "ethers";
-import { Web3ConnectButton } from "../components/ethers";
-import { isFunction } from "react-bootstrap-typeahead/types/utils";
 
 const frozenNacl = Object.freeze({
   randomBytes: deepFreeze(nacl.randomBytes),
