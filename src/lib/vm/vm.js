@@ -1142,6 +1142,9 @@ class VmStack {
               "Method: useState. The hook can an only be called from the top of the stack"
             );
           }
+          if (!this.vm.hooks) {
+            throw new Error("Hooks are unavailable for modules");
+          }
           if (args.length < 1) {
             throw new Error(
               "Method: useState. Required arguments: 'initialState'"
@@ -1170,6 +1173,9 @@ class VmStack {
             throw new Error(
               "Method: useEffect. The hook can an only be called from the top of the stack"
             );
+          }
+          if (!this.vm.hooks) {
+            throw new Error("Hooks are unavailable for modules");
           }
           if (args.length < 1) {
             throw new Error(
@@ -2305,7 +2311,7 @@ export default class VM {
       return "Too deep";
     }
     this.gIndex = 0;
-    const { hooks, state } = reactState;
+    const { hooks, state } = reactState ?? {};
     this.hooks = hooks;
     this.state = {
       props: isObject(props) ? Object.assign({}, props) : props,
