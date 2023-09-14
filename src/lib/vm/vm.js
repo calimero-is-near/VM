@@ -1225,7 +1225,46 @@ class VmStack {
           });
 
           return undefined;
-        } else if (callee === "setTimeout") {
+        } else if (callee === "useCallback") {
+          if (this.prevStack) {
+              throw new Error(
+                  "Method: useCallback. The hook can only be called from the top of the stack"
+              );
+          }
+          if (args.length < 1) {
+              throw new Error(
+                  "Method: useCallback. Required arguments: 'callback'. Optional: 'dependencies'"
+              );
+          }
+          const callback = args[0];
+          if (!(callback instanceof Function)) {
+              throw new Error(
+                  "Method: useCallback. The first argument 'callback' must be a function"
+              );
+          }
+          const hookIndex = this.hookIndex++;
+          const dependencies = args[1];
+          const hook = this.vm.hooks[hookIndex];
+          if (hook) {
+              const oldDependencies = hook.dependencies;
+              if (
+                  oldDependencies !== undefined &&
+                  deepEqual(oldDependencies, dependencies)
+              ) {
+                  console.log("useCallback: hook found", hookIndex, this.vm.hooks, this.vm.widgetSrc);
+                  return hook.callback;
+              }
+          } else {
+
+            console.log("No hook found openChannelSettings", hookIndex, this.vm.hooks, this.vm.widgetSrc,
+            );
+          }
+          this.vm.setReactHook(hookIndex, {
+              callback: callback,
+              dependencies: dependencies,
+          });
+          return callback;
+      } else if (callee === "setTimeout") {
           const [callback, timeout] = args;
           const timer = setTimeout(() => {
             if (!this.vm.alive) {
@@ -1427,6 +1466,7 @@ class VmStack {
         if (code.optional) {
           return undefined;
         }
+        console.info("openChannelSettings keyword", keyword, "key", key, "obj", obj, code, "code","args", args);
         throw new Error("Not a function call expression");
       }
     } else if (type === "Literal" || type === "JSXText") {

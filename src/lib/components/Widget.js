@@ -234,6 +234,40 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
     };
     if (deepEqual(vmInput, prevVmInput)) {
       return;
+    } else if (prevVmInput) {
+      if(deepEqual(vmInput.props, prevVmInput.props)) {
+        console.log("Props didn't cause the re-render:", propsSrc);
+        if(propsSrc === "calimera.testnet/widget/Calimero.Curb.Main" ) {
+          const changes = {};
+        Object.keys(vmInput).forEach((key) => {
+          if (!deepEqual(vmInput[key], prevVmInput[key])) {
+            changes[key] = {
+              oldValue: prevVmInput[key],
+              newValue: vmInput[key],
+            };
+          }
+        });
+
+        if (Object.keys(changes).length) {
+          console.log("Entry that caused re-render:", propsSrc, changes);
+        }
+      }
+      } else {
+      const changes = {};
+
+      Object.keys(vmInput.props).forEach((key) => {
+        if (!deepEqual(vmInput.props[key], prevVmInput.props[key])) {
+          changes[key] = {
+            oldValue: prevVmInput.props[key],
+            newValue: vmInput.props[key],
+          };
+        }
+      });
+
+      if (Object.keys(changes).length) {
+        console.log("Props that caused re-render:", propsSrc, changes);
+      }
+    }
     }
     setPrevVmInput(deepCopy(vmInput));
     try {
