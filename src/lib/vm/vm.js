@@ -848,13 +848,13 @@ class VmStack {
           ]);
         }
       } else if (keyword === "Near" && callee === "requestFak") {
-        return this.vm.near.requestFak(...args);
+        return this.vm.near.requestFak(this.vm.widgetSrc, ...args);
       } else if (keyword === "Near" && callee === "requestCalimeroFak" || keyword === "Calimero" && callee === "requestFak") {
-        return this.vm.near.requestCalimeroFak(this.vm.widgetSrc, ...args);
+        return this.vm.near.requestCalimeroFak(this.vm.near.calimeroConnection.config.networkId, ...args);
       } else if (keyword === "Near" && callee === "hasValidCalimeroFak" || keyword === "Calimero" && callee === "hasValidFak") {
-        return this.vm.near.verifyCalimeroFak(this.vm.widgetSrc, ...args);
+        return this.vm.near.verifyCalimeroFak(this.vm.near.calimeroConnection.config.networkId, ...args);
       } else if (keyword === "Near" && callee === "hasValidFak") {
-        return this.vm.near.verifyFak(...args);
+        return this.vm.near.verifyFak(this.vm.widgetSrc, ...args);
       } else if (keyword === "Near" && callee === "fakCalimeroCall" || keyword === "Calimero" && callee === "fakCall") {
         if (args.length < 2 || args.length > 5) {
           throw new Error(
@@ -862,7 +862,7 @@ class VmStack {
           );
         }
         return this.vm.near.submitCalimeroFakTransaction(
-          this.vm.widgetSrc,
+          this.vm.near.calimeroConnection.config.networkId,
           args[0],
           args[1],
           args[2] ?? {},
@@ -876,6 +876,7 @@ class VmStack {
           );
         }
         return this.vm.near.submitFakTransaction(
+          this.vm.widgetSrc,
           args[0],
           args[1],
           args[2] ?? {},
@@ -889,7 +890,7 @@ class VmStack {
           );
         }
         return this.vm.near.signWithCalimeroFak(
-          this.vm.widgetSrc,
+          this.vm.near.calimeroConnection.config.networkId,
           args[0],
           args[1],
         );
