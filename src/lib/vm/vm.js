@@ -32,12 +32,8 @@ import { nanoid, customAlphabet } from "nanoid";
 import _ from "lodash";
 import { Parser } from "acorn";
 import jsx from "acorn-jsx";
-<<<<<<< HEAD
-import * as nearAPI from "near-api-js";
-=======
 import { ethers } from "ethers";
 import { Web3ConnectButton } from "../components/ethers";
->>>>>>> 90b415f (Replace isFunction import)
 
 // Radix:
 import * as Accordion from "@radix-ui/react-accordion";
