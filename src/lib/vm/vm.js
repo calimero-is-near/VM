@@ -2,10 +2,12 @@ import React from "react";
 import { Widget } from "../components/Widget";
 import {
   deepCopy,
+  deepEqual,
   deepFreeze,
   ipfsUpload,
   ipfsUrl,
   isArray,
+  isFunction,
   isObject,
   isReactObject,
   isString,
@@ -30,7 +32,8 @@ import { nanoid, customAlphabet } from "nanoid";
 import _ from "lodash";
 import { Parser } from "acorn";
 import jsx from "acorn-jsx";
-import * as nearAPI from "near-api-js";
+import { ethers } from "ethers";
+import { Web3ConnectButton } from "../components/ethers";
 
 // Radix:
 import * as Accordion from "@radix-ui/react-accordion";
@@ -60,8 +63,6 @@ import * as Toggle from "@radix-ui/react-toggle";
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import * as Toolbar from "@radix-ui/react-toolbar";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
-import { ethers } from "ethers";
-import { Web3ConnectButton } from "../components/ethers";
 
 const frozenNacl = Object.freeze({
   randomBytes: deepFreeze(nacl.randomBytes),
@@ -77,6 +78,7 @@ const frozenEthers = Object.freeze({
   utils: deepFreeze(ethers.utils),
   BigNumber: deepFreeze(ethers.BigNumber),
   Contract: deepFreeze(ethers.Contract),
+  providers: deepFreeze(ethers.providers),
 });
 
 // `nanoid.nanoid()` is a but odd, but it seems better to match the official
@@ -174,6 +176,7 @@ const ApprovedTagsSimple = {
 const ApprovedTagsCustom = {
   Widget: false,
   CommitButton: true,
+  GlobalStateProvider: true,
   IpfsImageUpload: false,
   Markdown: false,
   Fragment: true,
@@ -254,6 +257,20 @@ const Keywords = {
   VM: true,
   Calimero: true,
   Crypto: true,
+  Promise,
+};
+
+const NativeFunctions = {
+  encodeURIComponent,
+  decodeURIComponent,
+  isNaN,
+  parseInt,
+  parseFloat,
+  isFinite,
+  btoa,
+  atob,
+  decodeURI,
+  encodeURI,
 };
 
 const ReservedKeys = {
@@ -424,6 +441,7 @@ class Stack {
 class VmStack {
   constructor(vm, prevStack, state, isTrusted) {
     this.gIndex = 0;
+    this.hookIndex = 0;
     this.vm = vm;
     this.isTrusted = !!isTrusted;
     this.stack = new Stack(prevStack, state);
@@ -598,12 +616,24 @@ class VmStack {
       attributes.config = [attributes.config, ...this.vm.widgetConfigs].filter(
         Boolean
       );
+    } else if (element === "CommitButton") {
+      attributes.networkId = this.vm.networkId;
     }
 
     if (withChildren === false && code.children.length) {
       throw new Error(
         "And element '" + element + "' contains children, but shouldn't"
       );
+    }
+
+    if (element === "GlobalStateProvider") {
+      if(!attributes.value) {
+        throw new Error("GlobalStateProvider requires a value prop");
+      }
+      if(!isArray(attributes.value) || attributes.value.length !== 2) {
+        throw new Error("Invalid value prop for GlobalStateProvider");
+      }
+      this.vm.globalStateContext = attributes.value;
     }
 
     const children = code.children.map((child, i) => {
@@ -767,10 +797,10 @@ class VmStack {
           blockId,
           maybeSubscribe(subscribe, blockId)
         );
-      } else if (keyword === "Near" && callee === "calimeroView") {
+      } else if (keyword === "Near" && callee === "calimeroView" || keyword === "Calimero" && callee === "view") {
         if (args.length < 2) {
           throw new Error(
-            "Method: Near.view. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality', 'subscribe'"
+            "Method: Calimero.view. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality', 'subscribe'"
           );
         }
         const [contractName, methodName, viewArg, blockId, subscribe] = args;
@@ -789,10 +819,10 @@ class VmStack {
           );
         }
         return this.vm.asyncNearView(...args);
-      } else if (keyword === "Near" && callee === "asyncCalimeroView") {
+      } else if (keyword === "Near" && callee === "asyncCalimeroView" || keyword === "Calimero" && callee === "asyncView") {
         if (args.length < 2) {
           throw new Error(
-            "Method: Near.asyncView. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality'"
+            "Method: Calimero.asyncView. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality'"
           );
         }
         return this.vm.asyncCalimeroView(...args);
@@ -831,21 +861,21 @@ class VmStack {
           ]);
         }
       } else if (keyword === "Near" && callee === "requestFak") {
-        return this.vm.near.requestFak(...args);
-      } else if (keyword === "Near" && callee === "requestCalimeroFak") {
-        return this.vm.near.requestCalimeroFak(this.vm.widgetSrc, ...args);
-      } else if (keyword === "Near" && callee === "hasValidCalimeroFak") {
-        return this.vm.near.verifyCalimeroFak(this.vm.widgetSrc, ...args);
+        return this.vm.near.requestFak(this.vm.widgetSrc, ...args);
+      } else if (keyword === "Near" && callee === "requestCalimeroFak" || keyword === "Calimero" && callee === "requestFak") {
+        return this.vm.near.requestCalimeroFak(this.vm.near.calimeroConnection.config.networkId, ...args);
+      } else if (keyword === "Near" && callee === "hasValidCalimeroFak" || keyword === "Calimero" && callee === "hasValidFak") {
+        return this.vm.near.verifyCalimeroFak(this.vm.near.calimeroConnection.config.networkId, ...args);
       } else if (keyword === "Near" && callee === "hasValidFak") {
-        return this.vm.near.verifyFak(...args);
-      } else if (keyword === "Near" && callee === "fakCalimeroCall") {
+        return this.vm.near.verifyFak(this.vm.widgetSrc, ...args);
+      } else if (keyword === "Near" && callee === "fakCalimeroCall" || keyword === "Calimero" && callee === "fakCall") {
         if (args.length < 2 || args.length > 5) {
           throw new Error(
-            "Method: Near.call. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
+            "Method: Calimero.fakCall. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
           );
         }
         return this.vm.near.submitCalimeroFakTransaction(
-          this.vm.widgetSrc,
+          this.vm.near.calimeroConnection.config.networkId,
           args[0],
           args[1],
           args[2] ?? {},
@@ -855,10 +885,11 @@ class VmStack {
       } else if (keyword === "Near" && callee === "fakCall") {
         if (args.length < 2 || args.length > 5) {
           throw new Error(
-            "Method: Near.call. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
+            "Method: Near.fakCall. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
           );
         }
         return this.vm.near.submitFakTransaction(
+          this.vm.widgetSrc,
           args[0],
           args[1],
           args[2] ?? {},
@@ -872,73 +903,10 @@ class VmStack {
           );
         }
         return this.vm.near.signWithCalimeroFak(
-          this.vm.widgetSrc,
+          this.vm.near.calimeroConnection.config.networkId,
           args[0],
           args[1],
         );
-      } else if (callee === "fetch") {
-        if (args.length < 1) {
-          throw new Error(
-            "Method: fetch. Required arguments: 'url'. Optional: 'options'"
-          );
-        }
-        return this.vm.cachedFetch(...args);
-      } else if (callee === "asyncFetch") {
-        if (args.length < 1) {
-          throw new Error(
-            "Method: asyncFetch. Required arguments: 'url'. Optional: 'options'"
-          );
-        }
-        return this.vm.asyncFetch(...args);
-      } else if (callee === "useCache") {
-        if (args.length < 2) {
-          throw new Error(
-            "Method: useCache. Required arguments: 'promiseGenerator', 'dataKey'. Optional: 'options'"
-          );
-        }
-        if (!(args[0] instanceof Function)) {
-          throw new Error(
-            "Method: useCache. The first argument 'promiseGenerator' must be a function"
-          );
-        }
-        return this.vm.useCache(...args);
-      } else if (callee === "parseInt") {
-        return parseInt(...args);
-      } else if (callee === "parseFloat") {
-        return parseFloat(...args);
-      } else if (callee === "isNaN") {
-        return isNaN(...args);
-      } else if (callee === "setTimeout") {
-        const [callback, timeout] = args;
-        const timer = setTimeout(() => {
-          if (!this.vm.alive) {
-            return;
-          }
-          callback();
-        }, timeout);
-        this.vm.timeouts.add(timer);
-        return timer;
-      } else if (callee === "setInterval") {
-        if (this.vm.intervals.size >= MAX_INTERVALS) {
-          throw new Error(`Too many intervals. Max allowed: ${MAX_INTERVALS}`);
-        }
-        const [callback, timeout] = args;
-        const timer = setInterval(() => {
-          if (!this.vm.alive) {
-            return;
-          }
-          callback();
-        }, timeout);
-        this.vm.intervals.add(timer);
-        return timer;
-      } else if (callee === "clearTimeout") {
-        const timer = args[0];
-        this.vm.timeouts.delete(timer);
-        return clearTimeout(timer);
-      } else if (callee === "clearInterval") {
-        const timer = args[0];
-        this.vm.intervals.delete(timer);
-        return clearInterval(timer);
       } else if (
         (keyword === "JSON" && callee === "stringify") ||
         callee === "stringify"
@@ -1091,8 +1059,26 @@ class VmStack {
       } else if (keyword === "Ethers") {
         if (callee === "provider") {
           return this.vm.ethersProvider;
+        } else if (callee === "setChain") {
+          const f = this.vm.ethersProviderContext?.setChain;
+          if (!f) {
+            throw new Error("The gateway doesn't support `setChain` operation");
+          }
+          return f(...args);
         }
         return this.vm.cachedEthersCall(callee, args);
+      } else if (callee === "useGlobalState") {
+        if(args.length < 1 || !isString(args[0])) {
+          throw new Error("Method: useGlobalState. Requires string argument");
+        }
+        const [globalState, setGlobalState] = this.vm.globalStateContext
+        return [
+          globalState[args[0]], 
+          (value) => setGlobalState({
+            ...globalState,
+            [args[0]]: value,
+          })
+        ];
       } else if (keyword === "WebSocket") {
         if (callee === "WebSocket") {
           const websocket = new WebSocket(...args);
@@ -1100,6 +1086,193 @@ class VmStack {
           return websocket;
         } else {
           throw new Error("Unsupported WebSocket method");
+        }
+      } else if (keywordType === undefined) {
+        if (NativeFunctions.hasOwnProperty(callee)) {
+          return NativeFunctions[callee](...args);
+        } else if (callee === "fetch") {
+          if (args.length < 1) {
+            throw new Error(
+              "Method: fetch. Required arguments: 'url'. Optional: 'options'"
+            );
+          }
+          return this.vm.cachedFetch(...args);
+        } else if (callee === "asyncFetch") {
+          if (args.length < 1) {
+            throw new Error(
+              "Method: asyncFetch. Required arguments: 'url'. Optional: 'options'"
+            );
+          }
+          return this.vm.asyncFetch(...args);
+        } else if (callee === "useCache") {
+          if (args.length < 2) {
+            throw new Error(
+              "Method: useCache. Required arguments: 'promiseGenerator', 'dataKey'. Optional: 'options'"
+            );
+          }
+          if (!isFunction(args[0])) {
+            throw new Error(
+              "Method: useCache. The first argument 'promiseGenerator' must be a function"
+            );
+          }
+          return this.vm.useCache(...args);
+        } else if (callee === "useState") {
+          if (this.prevStack) {
+            throw new Error(
+              "Method: useState. The hook can an only be called from the top of the stack"
+            );
+          }
+          if (args.length < 1) {
+            throw new Error(
+              "Method: useState. Required arguments: 'initialState'"
+            );
+          }
+          const initialState = args[0];
+          const hookIndex = this.hookIndex++;
+          const hook = this.vm.hooks[hookIndex];
+          if (hook) {
+            return [hook.state, hook.setState];
+          }
+
+          const getState = () => this.vm.hooks[hookIndex]?.state;
+
+          const setState = (newState) => {
+            if (isFunction(newState)) {
+              newState = newState(getState());
+            }
+            this.vm.setReactHook(hookIndex, { state: newState, setState });
+            return newState;
+          };
+
+          return [setState(initialState), setState];
+        } else if (callee === "useEffect") {
+          if (this.prevStack) {
+            throw new Error(
+              "Method: useEffect. The hook can an only be called from the top of the stack"
+            );
+          }
+          if (args.length < 1) {
+            throw new Error(
+              "Method: useEffect. Required arguments: 'setup'. Optional: 'dependencies'"
+            );
+          }
+          const setup = args[0];
+          if (!isFunction(setup)) {
+            throw new Error(
+              "Method: useEffect. The first argument 'setup' must be a function"
+            );
+          }
+          const hookIndex = this.hookIndex++;
+          const dependencies = args[1];
+          const hook = this.vm.hooks[hookIndex];
+          if (hook) {
+            const oldDependencies = hook.dependencies;
+            if (
+              oldDependencies !== undefined &&
+              deepEqual(oldDependencies, dependencies)
+            ) {
+              return undefined;
+            }
+          }
+          const cleanup = hook?.cleanup;
+          if (isFunction(cleanup)) {
+            cleanup();
+          }
+          this.vm.setReactHook(hookIndex, {
+            cleanup: setup(),
+            dependencies,
+          });
+
+          return undefined;
+        } else if (callee === "useMemo" || callee === "useCallback") {
+          if (this.prevStack) {
+              throw new Error(
+                  `Method: ${callee}. The hook can only be called from the top of the stack`
+              );
+          }
+      
+          const isMemo = callee === "useMemo";
+          const fnArgName = isMemo ? 'factory' : 'callback';
+          if (args.length < 1) {
+              throw new Error(
+                  `Method: ${callee}. Required arguments: '${fnArgName}'. Optional: 'dependencies'`
+              );
+          }
+      
+          const fn = args[0];
+          if (!(fn instanceof Function)) {
+              throw new Error(
+                  `Method: ${callee}. The first argument '${fnArgName}' must be a function`
+              );
+          }
+      
+          const hookIndex = this.hookIndex++;
+          const dependencies = args[1];
+          const hook = this.vm.hooks[hookIndex];
+          
+          if (hook) {
+              const oldDependencies = hook.dependencies;
+              if (
+                  oldDependencies !== undefined &&
+                  deepEqual(oldDependencies, dependencies)
+              ) {
+                  return hook.memoized;
+              }
+          }
+          
+          const memoized = isMemo ? fn() : fn;
+          this.vm.setReactHook(hookIndex, {
+              memoized,
+              dependencies,
+          });
+          return memoized;
+        } else if (callee === "useRef") {
+          if (this.prevStack) {
+            throw new Error(
+              'useRef hook error: Hooks should only be called from the top level, not inside loops, conditions, or nested functions.'
+            );
+          }
+          const hookIndex = this.hookIndex++;
+          if (!this.vm.hooks[hookIndex]) {
+            const initialValue = args.length > 0 ? args[0] : null;
+            const newRef = { current: initialValue };
+            this.vm.setReactHook(hookIndex, { ref: newRef });
+            return newRef;
+          }
+          return this.vm.hooks[hookIndex].ref;
+        } else if (callee === "setTimeout") {
+          const [callback, timeout] = args;
+          const timer = setTimeout(() => {
+            if (!this.vm.alive) {
+              return;
+            }
+            callback();
+          }, timeout);
+          this.vm.timeouts.add(timer);
+          return timer;
+        } else if (callee === "setInterval") {
+          if (this.vm.intervals.size >= MAX_INTERVALS) {
+            throw new Error(
+              `Too many intervals. Max allowed: ${MAX_INTERVALS}`
+            );
+          }
+          const [callback, timeout] = args;
+          const timer = setInterval(() => {
+            if (!this.vm.alive) {
+              return;
+            }
+            callback();
+          }, timeout);
+          this.vm.intervals.add(timer);
+          return timer;
+        } else if (callee === "clearTimeout") {
+          const timer = args[0];
+          this.vm.timeouts.delete(timer);
+          return clearTimeout(timer);
+        } else if (callee === "clearInterval") {
+          const timer = args[0];
+          this.vm.intervals.delete(timer);
+          return clearInterval(timer);
         }
       }
     } else {
@@ -1157,6 +1330,13 @@ class VmStack {
       ) {
         const keyword = code.object.name;
         if (keyword in Keywords) {
+          // Special case for Promise.all and Promise.any
+          if (keyword === 'Promise' && ['all', 'any'].includes(code.property.name)) {
+            return {
+              obj: Promise,  // Return the Promise object itself
+              key: code.property.name
+            };
+           }
           if (!options?.callee) {
             throw new Error(
               "Cannot dereference keyword '" +
@@ -1792,6 +1972,7 @@ export default class VM {
       version,
       widgetConfigs,
       ethersProviderContext,
+      globalStateContext,
       isModule,
     } = options;
 
@@ -1815,7 +1996,22 @@ export default class VM {
     }
 
     this.setReactState = setReactState
-      ? (s) => setReactState(isObject(s) ? Object.assign({}, s) : s)
+      ? (s) =>
+          setReactState({
+            hooks: this.hooks,
+            state: isObject(s) ? Object.assign({}, s) : s,
+          })
+      : () => {
+          throw new Error("State is unavailable for modules");
+        };
+    this.setReactHook = setReactState
+      ? (i, v) => {
+          this.hooks[i] = v;
+          setReactState({
+            hooks: this.hooks,
+            state: this.state.state,
+          });
+        }
       : () => {
           throw new Error("State is unavailable for modules");
         };
@@ -1833,11 +2029,14 @@ export default class VM {
     this.ethersProvider = ethersProviderContext?.provider
       ? new ethers.providers.Web3Provider(ethersProviderContext.provider)
       : null;
-
+    this.globalStateContext = globalStateContext;
     this.timeouts = new Set();
     this.intervals = new Set();
     this.websockets = [];
     this.vmInstances = new Map();
+    this.networkId =
+      widgetConfigs.findLast((config) => config && config.networkId)
+        ?.networkId || near.config.networkId;
   }
 
   stop() {
@@ -2078,7 +2277,7 @@ export default class VM {
     );
   }
 
-  execCode({ props, context, state, forwardedProps }) {
+  execCode({ props, context, reactState, forwardedProps }) {
     if (this.compileError) {
       throw this.compileError;
     }
@@ -2086,6 +2285,8 @@ export default class VM {
       return "Too deep";
     }
     this.gIndex = 0;
+    const { hooks, state } = reactState;
+    this.hooks = hooks;
     this.state = {
       props: isObject(props) ? Object.assign({}, props) : props,
       context,

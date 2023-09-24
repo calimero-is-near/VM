@@ -14,6 +14,7 @@ import {
   ErrorFallback,
   isObject,
   isString,
+  isFunction,
   Loading,
   TGas,
 } from "../data/utils";
@@ -23,8 +24,8 @@ import { CommitModal } from "./Commit";
 import { useAccountId } from "../data/account";
 import Big from "big.js";
 import uuid from "react-uuid";
-import { isFunction } from "react-bootstrap-typeahead/types/utils";
 import { EthersProviderContext } from "./ethers";
+import { GlobalStateContext } from "./globalState";
 
 const computeSrcOrCode = (src, code, configs) => {
   let srcOrCode = src ? { src } : code ? { code } : null;
@@ -49,6 +50,7 @@ const computeSrcOrCode = (src, code, configs) => {
 
 export const Widget = React.forwardRef((props, forwardedRef) => {
   const {
+    loading,
     src: propsSrc,
     code: propsCode,
     depth,
@@ -60,7 +62,10 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
   const [nonce, setNonce] = useState(0);
   const [code, setCode] = useState(null);
   const [src, setSrc] = useState(null);
-  const [state, setState] = useState(undefined);
+  const [reactState, setReactState] = useState({
+    hooks: [],
+    state: undefined,
+  });
   const [cacheNonce, setCacheNonce] = useState(0);
   const [context, setContext] = useState({});
   const [vm, setVm] = useState(null);
@@ -70,10 +75,14 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
   const [configs, setConfigs] = useState(null);
   const [srcOrCode, setSrcOrCode] = useState(null);
   const ethersProviderContext = useContext(EthersProviderContext);
+  const globalStateContext = useContext(GlobalStateContext);
 
-  const cache = useCache();
-  const near = useNear();
-  const accountId = useAccountId();
+  const networkId =
+    configs &&
+    configs.findLast((config) => config && config.networkId)?.networkId;
+  const cache = useCache(networkId);
+  const near = useNear(networkId);
+  const accountId = useAccountId(networkId);
   const [element, setElement] = useState(null);
 
   useEffect(() => {
@@ -166,11 +175,11 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
     if (!near || !code) {
       return;
     }
-    setState(undefined);
+    setReactState({ hooks: [], state: undefined });
     const vm = new VM({
       near,
       rawCode: code,
-      setReactState: setState,
+      setReactState,
       cache,
       refreshCache: () => {
         setCacheNonce((cacheNonce) => cacheNonce + 1);
@@ -182,6 +191,7 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
       version: uuid(),
       widgetConfigs: configs,
       ethersProviderContext,
+      globalStateContext,
     });
     setVm(vm);
     return () => {
@@ -196,6 +206,7 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
     confirmTransactions,
     configs,
     ethersProviderContext,
+    globalStateContext
   ]);
 
   useEffect(() => {
@@ -217,7 +228,7 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
     const vmInput = {
       props: propsProps || {},
       context,
-      state,
+      reactState,
       cacheNonce,
       version: vm.version,
       forwardedProps: {
@@ -245,7 +256,7 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
     vm,
     propsProps,
     context,
-    state,
+    reactState,
     cacheNonce,
     prevVmInput,
     forwardedRef,
@@ -266,6 +277,7 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
           <ConfirmTransactions
             transactions={transactions}
             onHide={() => setTransactions(null)}
+            networkId={networkId}
           />
         )}
         {commitRequest && (
@@ -277,11 +289,12 @@ export const Widget = React.forwardRef((props, forwardedRef) => {
             onHide={() => setCommitRequest(null)}
             onCommit={commitRequest.onCommit}
             onCancel={commitRequest.onCancel}
+            networkId={networkId}
           />
         )}
       </>
     </ErrorBoundary>
   ) : (
-    Loading
+    loading ?? Loading
   );
 });
