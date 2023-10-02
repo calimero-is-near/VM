@@ -241,6 +241,7 @@ const Keywords = {
   clipboard: true,
   Ethers: true,
   WebSocket: true,
+  Calimero: true,
   VM: true,
   Crypto: true,
 };
