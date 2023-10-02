@@ -238,30 +238,71 @@ const Keywords = {
   console: true,
   styled: true,
   Object: true,
-  Date,
-  Number,
-  Big,
-  Math,
-  Buffer,
-  Audio,
-  Image,
-  File,
-  Blob,
-  FileReader,
-  URL,
-  Array,
-  BN,
-  Uint8Array,
-  Map,
-  Set,
   clipboard: true,
   Ethers: true,
   WebSocket: true,
   VM: true,
-  Calimero: true,
   Crypto: true,
-  Promise,
 };
+
+const GlobalInjected = deepFreeze(
+  cloneDeep({
+    // Functions
+    encodeURIComponent,
+    decodeURIComponent,
+    isNaN,
+    parseInt,
+    parseFloat,
+    isFinite,
+    btoa,
+    atob,
+    decodeURI,
+    encodeURI,
+
+    // Libs
+    nacl: {
+      randomBytes: nacl.randomBytes,
+      secretbox: nacl.secretbox,
+      scalarMult: nacl.scalarMult,
+      box: nacl.box,
+      sign: nacl.sign,
+      hash: nacl.hash,
+      verify: nacl.verify,
+    },
+    ethers: {
+      utils: ethers.utils,
+      BigNumber: ethers.BigNumber,
+      Contract: ethers.Contract,
+      providers: ethers.providers,
+    },
+    // `nanoid.nanoid()` is a bit odd, but it seems better to match the official
+    // API than to create an alias
+    nanoid: {
+      nanoid,
+      customAlphabet,
+    },
+
+    // Objects
+    Promise,
+    Date,
+    Number,
+    String,
+    Big,
+    Math,
+    Buffer,
+    Audio,
+    Image,
+    File,
+    Blob,
+    FileReader,
+    URL,
+    Array,
+    BN,
+    Uint8Array,
+    Map,
+    Set,
+  })
+);
 
 const NativeFunctions = {
   encodeURIComponent,
@@ -339,10 +380,6 @@ const assertRadixComponent = (element) => {
 
   return RadixComp;
 };
-
-const getFakKey = (accountId, component, contract) => {
-  return "slackKey";
-}
 
 const maybeSubscribe = (subscribe, blockId) =>
   subscribe &&
@@ -830,17 +867,25 @@ class VmStack {
       } else if (keyword === "Near" && callee === "calimeroView" || keyword === "Calimero" && callee === "view") {
         if (args.length < 2) {
           throw new Error(
-            "Method: Calimero.view. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality', 'subscribe'"
+            "Method: Calimero.view. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality', 'subscribe', 'cacheOptions'"
           );
         }
-        const [contractName, methodName, viewArg, blockId, subscribe] = args;
+        const [
+          contractName,
+          methodName,
+          viewArg,
+          blockId,
+          subscribe,
+          cacheOptions,
+        ] = args;
 
         return this.vm.cachedCalimeroView(
           contractName,
           methodName,
           viewArg,
           blockId,
-          maybeSubscribe(subscribe, blockId)
+          maybeSubscribe(subscribe, blockId),
+          cacheOptions
         );
       } else if (keyword === "Near" && callee === "asyncView") {
         if (args.length < 2) {
@@ -933,7 +978,6 @@ class VmStack {
             "Method: Calimero.fakSignTx. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
           );
         }
-
         return this.vm.near.signCalimeroFakTransaction(
           this.vm.near.calimeroConnection.config.networkId,
           args[0],
@@ -1382,13 +1426,6 @@ class VmStack {
       ) {
         const keyword = code.object.name;
         if (keyword in Keywords) {
-          // Special case for Promise.all and Promise.any
-          if (keyword === 'Promise' && ['all', 'any'].includes(code.property.name)) {
-            return {
-              obj: Promise,  // Return the Promise object itself
-              key: code.property.name
-            };
-           }
           if (!options?.callee) {
             throw new Error(
               "Cannot dereference keyword '" +
@@ -2205,7 +2242,14 @@ export default class VM {
       subscribe
     );
   }
-  cachedCalimeroView(contractName, methodName, args, blockId, subscribe) {
+  cachedCalimeroView(
+    contractName,
+    methodName,
+    args,
+    blockId,
+    subscribe,
+    cacheOptions
+  ) {
     return this.cachedPromise(
       (invalidate) =>
         this.cache.cachedCalimeroViewCall(
@@ -2214,7 +2258,8 @@ export default class VM {
           methodName,
           args,
           blockId,
-          invalidate
+          invalidate,
+          cacheOptions
         ),
       subscribe
     );
@@ -2361,17 +2406,15 @@ export default class VM {
     const { hooks, state } = reactState ?? {};
     this.hooks = hooks;
     this.state = {
+      ...GlobalInjected,
       props: isObject(props) ? Object.assign({}, props) : props,
       context,
       state,
-      nacl: frozenNacl,
       get elliptic() {
         delete this.elliptic;
         this.elliptic = cloneDeep(elliptic);
         return this.elliptic;
       },
-      ethers: frozenEthers,
-      nanoid: frozenNanoid,
     };
     this.forwardedProps = forwardedProps;
     this.loopLimit = LoopLimit;

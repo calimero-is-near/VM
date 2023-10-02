@@ -237,7 +237,15 @@ class Cache {
       cacheOptions
     );
   }
-  cachedCalimeroViewCall(near, contractId, methodName, args, blockId, invalidate) {
+  cachedCalimeroViewCall(
+    near,
+    contractId,
+    methodName,
+    args,
+    blockId,
+    invalidate,
+    cacheOptions
+  ) {
     return this.cachedPromise(
       {
         action: Action.ViewCall,
@@ -247,7 +255,8 @@ class Cache {
         blockId,
       },
       () => near.viewCalimero(contractId, methodName, args, blockId),
-      invalidate
+      invalidate,
+      cacheOptions
     );
   }
 
