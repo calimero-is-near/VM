@@ -293,7 +293,7 @@ async function signCalimeroFakTransaction(storageKey, near, contractName, method
         nearAPI.transactions.functionCall(
           methodName,
           args,
-          gas ?? TGas.mul(30).toFixed(0),
+          gas ?? TGas.mul(300).toFixed(0),
           deposit ?? "0"
         )
       ]
