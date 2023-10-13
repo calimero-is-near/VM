@@ -37,9 +37,9 @@ export const MarkdownEditor = (props) => {
   useEffect(() => {
     if (props.selectedEmoji) {
       const newMd = `${ref.current.getMarkdown()} ${props.selectedEmoji}`;
-      ref.current.setMarkdown(newMd);
-    }
-    if (!props.message) {
+      props.resetSelectedEmoji();
+      ref?.current.setMarkdown(newMd);
+    } else if (!props.message) {
       ref?.current.setMarkdown("");
     }
   }, [props.selectedEmoji, props.message]);
