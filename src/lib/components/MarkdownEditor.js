@@ -39,7 +39,10 @@ export const MarkdownEditor = (props) => {
       const newMd = `${ref.current.getMarkdown()} ${props.selectedEmoji}`;
       ref.current.setMarkdown(newMd);
     }
-  }, [props.selectedEmoji]);
+    if (!props.message) {
+      ref?.current.setMarkdown("");
+    }
+  }, [props.selectedEmoji, props.message]);
   return (
     <>
       <MDXEditor
