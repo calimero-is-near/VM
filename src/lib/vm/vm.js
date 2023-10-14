@@ -182,7 +182,7 @@ const ApprovedTagsCustom = {
   GlobalStateProvider: true,
   IpfsImageUpload: false,
   Markdown: false,
-  MarkdownEditor: true,
+  MarkdownEditor: false,
   Fragment: true,
   InfiniteScroll: true,
   VirtualizedChat: false,
