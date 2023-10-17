@@ -14,7 +14,7 @@
   max-height: 456px;
   overflow-y: scroll;
   @media (max-width: 1024px) {
-    max-height: 84px;
+    max-height: 155px;
   }
 }
 p {
