@@ -3,7 +3,6 @@ import React, { useEffect, useRef } from "react";
 import ReactQuill from "react-quill";
 
 export const MarkdownEditor = (props) => {
-  const ref = useRef(null);
   useEffect(() => {
     if (props.selectedEmoji) {
       const newValue = `${props.value.replace(/<p><br><\/p>\s*$/i, '')}${props.selectedEmoji}`;
@@ -19,7 +18,6 @@ export const MarkdownEditor = (props) => {
 
   return (
     <ReactQuill
-      ref={ref}
       modules={{
         toolbar: toolbarOptions
       }}
