@@ -10,15 +10,15 @@ const LsKeyPretendAccountId = LsKey + ":pretendAccountId:";
 
 const defaultAccount = {
   loading: true,
-  signedAccountId: ls.get(LsKeyAccountId) ?? undefined,
-  pretendAccountId: ls.get(LsKeyPretendAccountId) ?? undefined,
+  signedAccountId: ls.get( LsKeyAccountId ) ?? undefined,
+  pretendAccountId: ls.get( LsKeyPretendAccountId ) ?? undefined,
   accountId:
-    ls.get(LsKeyPretendAccountId) ?? ls.get(LsKeyAccountId) ?? undefined,
+    ls.get( LsKeyPretendAccountId ) ?? ls.get( LsKeyAccountId ) ?? undefined,
   state: null,
   near: null,
 };
 
-async function updateAccount(near, walletState) {
+async function updateAccount ( near, walletState ) {
   near.connectedContractId = walletState?.contract?.contractId;
   if (
     near.connectedContractId &&
@@ -30,44 +30,44 @@ async function updateAccount(near, walletState) {
     near.connectedContractId = null;
     walletState = selector.store.getState();
   }
-  near.accountId = walletState?.accounts?.[0]?.accountId ?? null;
-  if (near.accountId) {
+  near.accountId = walletState?.accounts?.[ 0 ]?.accountId ?? null;
+  if ( near.accountId ) {
     near.publicKey = null;
     try {
-      if (walletState?.selectedWalletId === "here-wallet") {
-        const hereKeystore = ls.get("herewallet:keystore");
+      if ( walletState?.selectedWalletId === "here-wallet" ) {
+        const hereKeystore = ls.get( "herewallet:keystore" );
         near.publicKey = nearAPI.KeyPair.fromString(
-          hereKeystore[near.config.networkId].accounts[near.accountId]
+          hereKeystore[ near.config.networkId ].accounts[ near.accountId ]
         ).getPublicKey();
       }
-    } catch (e) {
-      console.error(e);
+    } catch ( e ) {
+      console.error( e );
     }
-    if (!near.publicKey) {
+    if ( !near.publicKey ) {
       try {
         near.publicKey = nearAPI.KeyPair.fromString(
           ls.get(
             walletState?.selectedWalletId === "meteor-wallet"
-              ? `_meteor_wallet${near.accountId}:${near.config.networkId}`
-              : `near-api-js:keystore:${near.accountId}:${near.config.networkId}`
+              ? `_meteor_wallet${ near.accountId }:${ near.config.networkId }`
+              : `near-api-js:keystore:${ near.accountId }:${ near.config.networkId }`
           )
         ).getPublicKey();
-      } catch (e) {
-        console.error(e);
+      } catch ( e ) {
+        console.error( e );
       }
     }
   }
 }
 
-const loadAccount = async (near, setAccount) => {
+const loadAccount = async ( near, setAccount ) => {
   const signedAccountId = near.accountId;
-  if (signedAccountId) {
-    ls.set(LsKeyAccountId, signedAccountId);
-    near.config.walletConnectCallback(signedAccountId);
+  if ( signedAccountId ) {
+    ls.set( LsKeyAccountId, signedAccountId );
+    near.config.walletConnectCallback( signedAccountId );
   } else {
-    ls.remove(LsKeyAccountId);
+    ls.remove( LsKeyAccountId );
   }
-  const pretendAccountId = ls.get(LsKeyPretendAccountId) ?? undefined;
+  const pretendAccountId = ls.get( LsKeyPretendAccountId ) ?? undefined;
   const account = {
     loading: false,
     signedAccountId,
@@ -75,59 +75,59 @@ const loadAccount = async (near, setAccount) => {
     accountId: pretendAccountId ?? signedAccountId,
     state: null,
     near,
-    refresh: async () => await loadAccount(near, setAccount),
-    startPretending: async (pretendAccountId) => {
-      if (pretendAccountId) {
-        ls.set(LsKeyPretendAccountId, pretendAccountId);
+    refresh: async () => await loadAccount( near, setAccount ),
+    startPretending: async ( pretendAccountId ) => {
+      if ( pretendAccountId ) {
+        ls.set( LsKeyPretendAccountId, pretendAccountId );
       } else {
-        ls.remove(LsKeyPretendAccountId);
+        ls.remove( LsKeyPretendAccountId );
       }
-      await loadAccount(near, setAccount);
+      await loadAccount( near, setAccount );
     },
   };
-  if (signedAccountId) {
-    const [storageBalance, state] = await Promise.all([
-      near.contract.storage_balance_of({
+  if ( signedAccountId ) {
+    const [ storageBalance, state ] = await Promise.all( [
+      near.contract.storage_balance_of( {
         account_id: signedAccountId,
-      }),
-      near.accountState(signedAccountId),
-    ]);
+      } ),
+      near.accountState( signedAccountId ),
+    ] );
     account.storageBalance = storageBalance;
     account.state = state;
   }
 
-  setAccount(account);
+  setAccount( account );
 };
 
-export const useAccount = singletonHook(defaultAccount, () => {
-  const [account, setAccount] = useState(defaultAccount);
+export const useAccount = singletonHook( defaultAccount, () => {
+  const [ account, setAccount ] = useState( defaultAccount );
   const near = useNear();
 
-  useEffect(() => {
-    if (!near) {
+  useEffect( () => {
+    if ( !near ) {
       return;
     }
-    near.selector.then((selector) => {
-      selector.store.observable.subscribe(async (walletState) => {
-        await updateAccount(near, walletState);
+    near.selector.then( ( selector ) => {
+      selector.store.observable.subscribe( async ( walletState ) => {
+        await updateAccount( near, walletState );
         try {
-          await loadAccount(near, setAccount);
-        } catch (e) {
-          console.error(e);
+          await loadAccount( near, setAccount );
+        } catch ( e ) {
+          console.error( e );
         }
-      });
-    });
-  }, [near]);
+      } );
+    } );
+  }, [ near ] );
 
   return account;
-});
+} );
 
-export const useAccountId = (networkId) => {
+export const useAccountId = ( networkId ) => {
   const defaultNear = useNear();
   const account = useAccount();
-  
-  if (!defaultNear || (networkId && defaultNear.config.networkId !== networkId)) {
-      return;
+
+  if ( !defaultNear || ( networkId && defaultNear.config.networkId !== networkId ) ) {
+    return;
   }
 
   return account.accountId;
