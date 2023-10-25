@@ -1,57 +1,45 @@
-import React, { useCallback, useEffect, useState } from "react";
-import IframeResizer from "iframe-resizer-react";
-import { deepCopy, deepEqual } from "../data/utils";
+import React, { useCallback, useEffect, useState } from 'react';
+import IframeResizer from 'iframe-resizer-react';
+import { deepCopy, deepEqual } from '../data/utils';
 
 export default function SecureIframe(allProps) {
-  const {
-    className,
-    id,
-    style,
-    src,
-    srcDoc,
-    title,
-    message,
-    onLoad,
-    onMessage,
-    iframeResizer,
-  } = allProps;
+  const { className, id, style, src, srcDoc, title, message, onLoad, onMessage, iframeResizer } = allProps;
 
   const usedProps = { className, id, style, src, srcDoc, title };
 
   const [loaded, setLoaded] = useState(false);
   const [prevMessage, setPrevMessage] = useState(undefined);
   const ref = React.useRef();
-  const sandbox = "allow-scripts";
+  const sandbox = 'allow-scripts';
 
   const returnIframeResizerProps = () => {
     const result = {
       ...usedProps,
-      style: style ?? { width: "1px", minWidth: "100%" },
+      style: style ?? { width: '1px', minWidth: '100%' },
       checkOrigin: false,
     };
 
-    const allIframeResizerProps =
-      typeof iframeResizer === "object" ? iframeResizer : {};
+    const allIframeResizerProps = typeof iframeResizer === 'object' ? iframeResizer : {};
 
     const allowedIframeResizerProps = [
-      "log",
-      "autoResize",
-      "bodyBackground",
-      "bodyMargin",
-      "bodyPadding",
-      "inPageLinks",
-      "heightCalculationMethod",
-      "maxHeight",
-      "maxWidth",
-      "minHeight",
-      "minWidth",
-      "minWidth",
-      "resizeFrom",
-      "scrolling",
-      "sizeHeight",
-      "sizeWidth",
-      "tolerance",
-      "widthCalculationMethod",
+      'log',
+      'autoResize',
+      'bodyBackground',
+      'bodyMargin',
+      'bodyPadding',
+      'inPageLinks',
+      'heightCalculationMethod',
+      'maxHeight',
+      'maxWidth',
+      'minHeight',
+      'minWidth',
+      'minWidth',
+      'resizeFrom',
+      'scrolling',
+      'sizeHeight',
+      'sizeWidth',
+      'tolerance',
+      'widthCalculationMethod',
     ];
 
     Object.keys(allIframeResizerProps).forEach((key) => {
@@ -76,7 +64,7 @@ export default function SecureIframe(allProps) {
       }
       onMessage && onMessage(event.data);
     },
-    [ref, onMessage]
+    [ref, onMessage],
   );
 
   const onLoadHandler = () => {
@@ -85,9 +73,9 @@ export default function SecureIframe(allProps) {
   };
 
   useEffect(() => {
-    window.addEventListener("message", onMessageEvent, false);
+    window.addEventListener('message', onMessageEvent, false);
     return () => {
-      window.removeEventListener("message", onMessageEvent, false);
+      window.removeEventListener('message', onMessageEvent, false);
     };
   }, [onMessageEvent]);
 
@@ -96,11 +84,11 @@ export default function SecureIframe(allProps) {
       setPrevMessage(deepCopy(message));
 
       if (iframeResizer) {
-        ref.current.sendMessage(message, "*");
+        ref.current.sendMessage(message, '*');
         return;
       }
 
-      ref.current.contentWindow.postMessage(message, "*");
+      ref.current.contentWindow.postMessage(message, '*');
     }
   }, [message, ref, loaded, prevMessage]);
 
@@ -109,17 +97,8 @@ export default function SecureIframe(allProps) {
   }, [src, srcDoc]);
 
   if (iframeResizer) {
-    return (
-      <IframeResizer
-        {...returnIframeResizerProps()}
-        forwardRef={ref}
-        sandbox={sandbox}
-        onLoad={onLoadHandler}
-      />
-    );
+    return <IframeResizer {...returnIframeResizerProps()} forwardRef={ref} sandbox={sandbox} onLoad={onLoadHandler} />;
   }
 
-  return (
-    <iframe {...usedProps} ref={ref} sandbox={sandbox} onLoad={onLoadHandler} />
-  );
+  return <iframe {...usedProps} ref={ref} sandbox={sandbox} onLoad={onLoadHandler} />;
 }

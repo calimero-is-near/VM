@@ -1,7 +1,6 @@
-import { findAndReplace } from "mdast-util-find-and-replace";
+import { findAndReplace } from 'mdast-util-find-and-replace';
 
-const hashtagRegex =
-  /#(\w+)/gi;
+const hashtagRegex = /#(\w+)/gi;
 
 export default function hashtags() {
   function replace(value, hashtag, match) {
@@ -12,9 +11,9 @@ export default function hashtags() {
       return false;
     }
 
-    let node = { type: "text", value };
+    let node = { type: 'text', value };
     node = {
-      type: "strong",
+      type: 'strong',
       children: [node],
       data: {
         hProperties: { hashtag },

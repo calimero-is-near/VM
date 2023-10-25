@@ -1,13 +1,13 @@
-import * as nearAPI from "near-api-js";
-import Big from "big.js";
-import { useEffect, useMemo, useState } from "react";
-import { singletonHook } from "react-singleton-hook";
-import { MaxGasPerTransaction, TGas } from "./utils";
+import * as nearAPI from 'near-api-js';
+import Big from 'big.js';
+import { useEffect, useMemo, useState } from 'react';
+import { singletonHook } from 'react-singleton-hook';
+import { MaxGasPerTransaction, TGas } from './utils';
 
 const UseLegacyFunctionCallCreator = true;
 export const functionCallCreator = UseLegacyFunctionCallCreator
   ? (methodName, args, gas, deposit) => ({
-      type: "FunctionCall",
+      type: 'FunctionCall',
       params: {
         methodName,
         args,
@@ -17,45 +17,46 @@ export const functionCallCreator = UseLegacyFunctionCallCreator
     })
   : nearAPI.transactions.functionCall;
 
-  export const addKeyCreator = (newPublicKey, contractName, methodNames, allowance) => ({
-      type: "AddKey",
-      params: {
-        publicKey: newPublicKey,
-        accessKey: {
-        permission: {
-            allowance,
-            receiverId: contractName,
-            methodNames: methodNames,
-        }
-      }}
-    });
-  
+export const addKeyCreator = (newPublicKey, contractName, methodNames, allowance) => ({
+  type: 'AddKey',
+  params: {
+    publicKey: newPublicKey,
+    accessKey: {
+      permission: {
+        allowance,
+        receiverId: contractName,
+        methodNames: methodNames,
+      },
+    },
+  },
+});
+
 const TestNearConfig = {
-  networkId: "testnet",
-  nodeUrl: "https://rpc.testnet.near.org",
-  archivalNodeUrl: "https://rpc.testnet.internal.near.org",
-  contractName: "v1.social08.testnet",
-  walletUrl: "https://wallet.testnet.near.org",
-  wrapNearAccountId: "wrap.testnet",
-  apiUrl: "https://discovery-api.stage.testnet.near.org",
+  networkId: 'testnet',
+  nodeUrl: 'https://rpc.testnet.near.org',
+  archivalNodeUrl: 'https://rpc.testnet.internal.near.org',
+  contractName: 'v1.social08.testnet',
+  walletUrl: 'https://wallet.testnet.near.org',
+  wrapNearAccountId: 'wrap.testnet',
+  apiUrl: 'https://discovery-api.stage.testnet.near.org',
   enableWeb4FastRpc: false,
 };
 
 const CalimeroConfig = {
   networkId: `${process.env.NEXT_PUBLIC_CHAIN_ID}`,
-  calimeroUrl:`${process.env.NEXT_PUBLIC_RPC_ENDPOINT}`,
+  calimeroUrl: `${process.env.NEXT_PUBLIC_RPC_ENDPOINT}`,
   walletUrl: `${process.env.NEXT_PUBLIC_WALLET_URL}`,
   calimeroToken: `${process.env.NEXT_PUBLIC_CALIMERO_TOKEN}`,
-}
+};
 
 export const MainNearConfig = {
-  networkId: "mainnet",
-  nodeUrl: "https://rpc.mainnet.near.org",
-  archivalNodeUrl: "https://rpc.mainnet.internal.near.org",
-  contractName: "social.near",
-  walletUrl: "https://wallet.near.org",
-  wrapNearAccountId: "wrap.near",
-  apiUrl: "https://api.near.social",
+  networkId: 'mainnet',
+  nodeUrl: 'https://rpc.mainnet.near.org',
+  archivalNodeUrl: 'https://rpc.mainnet.internal.near.org',
+  contractName: 'social.near',
+  walletUrl: 'https://wallet.near.org',
+  wrapNearAccountId: 'wrap.near',
+  apiUrl: 'https://api.near.social',
   enableWeb4FastRpc: false,
 };
 
@@ -77,41 +78,27 @@ const apiCall = async (config, methodName, args, blockId, fallback) => {
   try {
     return await (
       await fetch(`${config.apiUrl}/${methodName}`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(args),
       })
     ).json();
   } catch (e) {
-    console.log("API call failed", methodName, args);
+    console.log('API call failed', methodName, args);
     console.error(e);
     return fallback();
   }
 };
 
-async function functionCall(
-  near,
-  contractName,
-  methodName,
-  args,
-  gas,
-  deposit
-) {
+async function functionCall(near, contractName, methodName, args, gas, deposit) {
   try {
     const wallet = await (await near.selector).wallet();
 
     return await wallet.signAndSendTransaction({
       receiverId: contractName,
-      actions: [
-        functionCallCreator(
-          methodName,
-          args,
-          gas ?? TGas.mul(30).toFixed(0),
-          deposit ?? "0"
-        ),
-      ],
+      actions: [functionCallCreator(methodName, args, gas ?? TGas.mul(30).toFixed(0), deposit ?? '0')],
     });
   } catch (e) {
     // const msg = e.toString();
@@ -123,10 +110,7 @@ async function functionCall(
 }
 
 async function accountState(near, accountId) {
-  const account = new nearAPI.Account(
-    near.nearConnection.connection,
-    accountId
-  );
+  const account = new nearAPI.Account(near.nearConnection.connection, accountId);
   return await account.state();
 }
 
@@ -134,133 +118,114 @@ async function getCurrentAccount(near) {
   const wallet = await near.selector;
   const accounts = wallet.store.getState().accounts;
   const accountId = accounts.filter((account) => !!account.active)[0].accountId;
-  if(!accountId) {
-    throw new Error("No active account");
+  if (!accountId) {
+    throw new Error('No active account');
   }
   return accountId;
 }
 
-const getFakKey = async(componentName, near, contract) => {
+const getFakKey = async (componentName, near, contract) => {
   const accountId = await getCurrentAccount(near);
   return `${accountId}:${componentName}:${contract}`;
-}
+};
 
 async function requestFak(componentName, near, contractName, methodNames) {
   const keyPair = nearAPI.utils.KeyPairEd25519.fromRandom();
-  localStorage.setItem(
-    await getFakKey(componentName, near, contractName),
-    keyPair.toString()
-  );
+  localStorage.setItem(await getFakKey(componentName, near, contractName), keyPair.toString());
   const walletSelector = await near.selector;
   const accountId = await getCurrentAccount(near);
-  const wallet = await (walletSelector).wallet();
-  const allowance = nearAPI.utils.format.parseNearAmount("0.33");
-  const action = addKeyCreator(
-    keyPair.publicKey.toString(),
-    contractName,
-    methodNames,
-    allowance
-  );
+  const wallet = await walletSelector.wallet();
+  const allowance = nearAPI.utils.format.parseNearAmount('0.33');
+  const action = addKeyCreator(keyPair.publicKey.toString(), contractName, methodNames, allowance);
   const transaction = {
     receiverId: accountId,
-    actions: [
-      action
-    ],
+    actions: [action],
   };
   return await wallet.signAndSendTransaction(transaction);
 }
 
-const getCalimeroFakKey = async(storageKey, near, contract) => {
+const getCalimeroFakKey = async (storageKey, near, contract) => {
   const accountId = await getCurrentAccount(near);
   return `cali:${accountId}:${storageKey}:${contract}`;
-}
+};
 
 async function requestCalimeroFak(storageKey, near, contractName, methodNames) {
-    const currentUrl = new URL(window.location.href);
-    const newUrl = new URL(CalimeroConfig.walletUrl + "/login/");
-    newUrl.searchParams.set('success_url', currentUrl.href);
-    newUrl.searchParams.set('failure_url', currentUrl.href);
-    const hashParams = new URLSearchParams();
-    if (contractName) {
-      const contractAccount = await near.calimeroConnection.account(contractName);
-      await contractAccount.state();
+  const currentUrl = new URL(window.location.href);
+  const newUrl = new URL(CalimeroConfig.walletUrl + '/login/');
+  newUrl.searchParams.set('success_url', currentUrl.href);
+  newUrl.searchParams.set('failure_url', currentUrl.href);
+  const hashParams = new URLSearchParams();
+  if (contractName) {
+    const contractAccount = await near.calimeroConnection.account(contractName);
+    await contractAccount.state();
 
-      newUrl.searchParams.set('contract_id', contractName);
-      const accessKey = nearAPI.utils.KeyPairEd25519.fromRandom();
-      newUrl.searchParams.set('public_key', accessKey.getPublicKey().toString());
-      localStorage.setItem(
-        await getCalimeroFakKey(storageKey, near, contractName),
-        accessKey
-      );
-    }
+    newUrl.searchParams.set('contract_id', contractName);
+    const accessKey = nearAPI.utils.KeyPairEd25519.fromRandom();
+    newUrl.searchParams.set('public_key', accessKey.getPublicKey().toString());
+    localStorage.setItem(await getCalimeroFakKey(storageKey, near, contractName), accessKey);
+  }
 
-    if (methodNames) {
-      methodNames.forEach(methodName => {
-        newUrl.searchParams.append('methodNames', methodName);
-      });
-    }
+  if (methodNames) {
+    methodNames.forEach((methodName) => {
+      newUrl.searchParams.append('methodNames', methodName);
+    });
+  }
 
-    hashParams.set('calimeroRPCEndpoint', CalimeroConfig.calimeroUrl);
-    hashParams.set('calimeroAuthToken', CalimeroConfig.calimeroToken);
-    hashParams.set('calimeroShardId', CalimeroConfig.networkId);
-    newUrl.hash = hashParams.toString();
-    window.location.assign(newUrl.toString());
+  hashParams.set('calimeroRPCEndpoint', CalimeroConfig.calimeroUrl);
+  hashParams.set('calimeroAuthToken', CalimeroConfig.calimeroToken);
+  hashParams.set('calimeroShardId', CalimeroConfig.networkId);
+  newUrl.hash = hashParams.toString();
+  window.location.assign(newUrl.toString());
 }
 
 async function verifyCalimeroFak(storageKey, near, contractName, methods) {
-  const key = localStorage.getItem(
-    await getCalimeroFakKey(storageKey, near, contractName)
-  );
-  if(!key) {
+  const key = localStorage.getItem(await getCalimeroFakKey(storageKey, near, contractName));
+  if (!key) {
     return false;
   }
   const accountId = await getCurrentAccount(near);
   const keyPair = nearAPI.KeyPair.fromString(key);
   const params = {
-    request_type: "view_access_key",
-    finality: "optimistic",
+    request_type: 'view_access_key',
+    finality: 'optimistic',
     account_id: accountId,
     public_key: keyPair.publicKey.toString(),
   };
-  try{
+  try {
     const result = await near.calimeroConnection.connection.provider.query(params);
     return checkFakKey(result, contractName, methods);
-  } catch(e) {
+  } catch (e) {
     console.error(e);
     return false;
   }
 }
 
 const checkFakKey = (rpcResponse, contract, methodNames) => {
-  const { receiver_id: receiverId = undefined, method_names: rpcMethodNames = [] } = 
+  const { receiver_id: receiverId = undefined, method_names: rpcMethodNames = [] } =
     rpcResponse?.permission?.FunctionCall || {};
-  if(!receiverId) {
-    throw new Error("No receiverId");
+  if (!receiverId) {
+    throw new Error('No receiverId');
     return false;
   }
-  if(!contract) {
+  if (!contract) {
     return true;
   }
-  if(receiverId !== contract) {
-    throw new Error("Wrong contract");
+  if (receiverId !== contract) {
+    throw new Error('Wrong contract');
     return false;
   }
-  if(methodNames && !methodNames.every(item => rpcMethodNames.includes(item))) {
-    throw new Error("Wrong method");
+  if (methodNames && !methodNames.every((item) => rpcMethodNames.includes(item))) {
+    throw new Error('Wrong method');
     return false;
   }
   return true;
-}
+};
 
 async function signWithCalimeroFak(storageKey, near, contractName, message) {
-  const key = localStorage.getItem(
-    await getCalimeroFakKey(storageKey, near, contractName)
-  );
+  const key = localStorage.getItem(await getCalimeroFakKey(storageKey, near, contractName));
 
-  if(!key) {
-    throw new Error(
-      "Method: Calimero.sign. Requires requestAccessKey to be called first"
-    );
+  if (!key) {
+    throw new Error('Method: Calimero.sign. Requires requestAccessKey to be called first');
   }
 
   const keyPair = nearAPI.KeyPair.fromString(key);
@@ -268,14 +233,10 @@ async function signWithCalimeroFak(storageKey, near, contractName, message) {
 }
 
 async function signCalimeroFakTransaction(storageKey, near, contractName, methodName, args, gas, deposit) {
-  const key = localStorage.getItem(
-    await getCalimeroFakKey(storageKey, near, contractName)
-  );
+  const key = localStorage.getItem(await getCalimeroFakKey(storageKey, near, contractName));
 
-  if(!key) {
-    throw new Error(
-      "Method: Calimero.fakSignTx. Requires requestAccessKey to be called first"
-    );
+  if (!key) {
+    throw new Error('Method: Calimero.fakSignTx. Requires requestAccessKey to be called first');
   }
 
   const accountId = await getCurrentAccount(near);
@@ -288,31 +249,20 @@ async function signCalimeroFakTransaction(storageKey, near, contractName, method
   const account = await near.calimeroConnection.account(accountId);
 
   try {
-    let [txHash, signedTx] = await account.signTransaction(
-      contractName, [
-        nearAPI.transactions.functionCall(
-          methodName,
-          args,
-          gas ?? TGas.mul(300).toFixed(0),
-          deposit ?? "0"
-        )
-      ]
-    );
-    return [nearAPI.utils.serialize.base_encode(txHash), Buffer.from(signedTx.encode()).toString("base64")];
+    let [txHash, signedTx] = await account.signTransaction(contractName, [
+      nearAPI.transactions.functionCall(methodName, args, gas ?? TGas.mul(300).toFixed(0), deposit ?? '0'),
+    ]);
+    return [nearAPI.utils.serialize.base_encode(txHash), Buffer.from(signedTx.encode()).toString('base64')];
   } catch (e) {
     console.error(e);
   }
 }
 
 async function submitFakCalimeroTransaction(storageKey, near, contractName, methodName, args, gas, deposit) {
-  const key = localStorage.getItem(
-    await getCalimeroFakKey(storageKey, near, contractName)
-  );
+  const key = localStorage.getItem(await getCalimeroFakKey(storageKey, near, contractName));
 
-  if(!key) {
-    throw new Error(
-      "Method: Near.fakCalimeroCall. Requires requestAccessKey to be called first"
-    );
+  if (!key) {
+    throw new Error('Method: Near.fakCalimeroCall. Requires requestAccessKey to be called first');
   }
 
   const accountId = await getCurrentAccount(near);
@@ -324,11 +274,7 @@ async function submitFakCalimeroTransaction(storageKey, near, contractName, meth
 
   const account = await near.calimeroConnection.account(accountId);
 
-  const contract = new nearAPI.Contract(
-    account,
-    contractName,
-    { changeMethods: [methodName], viewMethods: []}
-  );
+  const contract = new nearAPI.Contract(account, contractName, { changeMethods: [methodName], viewMethods: [] });
   try {
     return await contract[methodName]({ ...args }, gas?.toFixed(0), deposit?.toFixed(0));
   } catch (e) {
@@ -337,13 +283,9 @@ async function submitFakCalimeroTransaction(storageKey, near, contractName, meth
 }
 
 async function submitFakTransaction(componentName, near, contractName, methodName, args, gas, deposit) {
-  const key = localStorage.getItem(
-    await getFakKey(componentName, near, contractName)
-  );
-  if(!key) {
-    throw new Error(
-      "Method: Near.fakCall. Requires requestAccessKey to be called first"
-    );
+  const key = localStorage.getItem(await getFakKey(componentName, near, contractName));
+  if (!key) {
+    throw new Error('Method: Near.fakCall. Requires requestAccessKey to be called first');
   }
   const accountId = await getCurrentAccount(near);
   const provider = new nearAPI.providers.JsonRpcProvider({ url: near.config.nodeUrl });
@@ -352,39 +294,36 @@ async function submitFakTransaction(componentName, near, contractName, methodNam
   const keyPair = nearAPI.KeyPair.fromString(key);
   keyStore.setKey(near.networkId, accountId, keyPair);
 
-  const account = new nearAPI.Account({
-    provider,
-    signer: new nearAPI.InMemorySigner(keyStore),
-    networkId: near.networkId,
-  }, accountId);
-  
-  const contract = new nearAPI.Contract(
-    account,
-    contractName,
-    { changeMethods: [methodName], viewMethods: []}
+  const account = new nearAPI.Account(
+    {
+      provider,
+      signer: new nearAPI.InMemorySigner(keyStore),
+      networkId: near.networkId,
+    },
+    accountId,
   );
+
+  const contract = new nearAPI.Contract(account, contractName, { changeMethods: [methodName], viewMethods: [] });
   return await contract[methodName]({ ...args }, gas?.toFixed(0), deposit?.toFixed(0));
 }
 async function verifyFak(componentName, near, contractName, methods) {
-  const key = localStorage.getItem(
-    await getFakKey(componentName, near, contractName)
-  );
-  if(!key) {
+  const key = localStorage.getItem(await getFakKey(componentName, near, contractName));
+  if (!key) {
     return false;
   }
   const accountId = await getCurrentAccount(near);
   const provider = new nearAPI.providers.JsonRpcProvider({ url: near.config.nodeUrl });
   const keyPair = nearAPI.KeyPair.fromString(key);
   const params = {
-    request_type: "view_access_key",
-    finality: "final",
+    request_type: 'view_access_key',
+    finality: 'final',
     account_id: accountId,
     public_key: keyPair.publicKey.toString(),
   };
-  try{
+  try {
     const result = await provider.query(params);
     return checkFakKey(result, contractName, methods);
-  } catch(e) {
+  } catch (e) {
     console.error(e);
     return false;
   }
@@ -395,31 +334,21 @@ async function sendTransactions(near, functionCalls) {
     const wallet = await (await near.selector).wallet();
     const transactions = [];
     let currentTotalGas = Big(0);
-    functionCalls.forEach(
-      ({ contractName, methodName, args, gas, deposit }) => {
-        const newTotalGas = currentTotalGas.add(gas);
+    functionCalls.forEach(({ contractName, methodName, args, gas, deposit }) => {
+      const newTotalGas = currentTotalGas.add(gas);
 
-        const action = functionCallCreator(
-          methodName,
-          args,
-          gas.toFixed(0),
-          deposit.toFixed(0)
-        );
-        if (
-          transactions[transactions.length - 1]?.receiverId !== contractName ||
-          newTotalGas.gt(MaxGasPerTransaction)
-        ) {
-          transactions.push({
-            receiverId: contractName,
-            actions: [],
-          });
-          currentTotalGas = gas;
-        } else {
-          currentTotalGas = newTotalGas;
-        }
-        transactions[transactions.length - 1].actions.push(action);
+      const action = functionCallCreator(methodName, args, gas.toFixed(0), deposit.toFixed(0));
+      if (transactions[transactions.length - 1]?.receiverId !== contractName || newTotalGas.gt(MaxGasPerTransaction)) {
+        transactions.push({
+          receiverId: contractName,
+          actions: [],
+        });
+        currentTotalGas = gas;
+      } else {
+        currentTotalGas = newTotalGas;
       }
-    );
+      transactions[transactions.length - 1].actions.push(action);
+    });
     return await wallet.signAndSendTransactions({ transactions });
   } catch (e) {
     // const msg = e.toString();
@@ -437,46 +366,31 @@ function setupContract(near, contractId, options) {
     contractId,
   };
   viewMethods.forEach((methodName) => {
-    contract[methodName] = (args) =>
-      near.viewCall(contractId, methodName, args);
+    contract[methodName] = (args) => near.viewCall(contractId, methodName, args);
   });
   changeMethods.forEach((methodName) => {
-    contract[methodName] = (args, gas, deposit) =>
-      near.functionCall(contractId, methodName, args, gas, deposit);
+    contract[methodName] = (args, gas, deposit) => near.functionCall(contractId, methodName, args, gas, deposit);
   });
   return contract;
 }
 
-async function viewCall(
-  provider,
-  blockId,
-  contractId,
-  methodName,
-  args,
-  finality
-) {
+async function viewCall(provider, blockId, contractId, methodName, args, finality) {
   args = args || {};
   const result = await provider.query({
-    request_type: "call_function",
+    request_type: 'call_function',
     account_id: contractId,
     method_name: methodName,
-    args_base64: Buffer.from(JSON.stringify(args)).toString("base64"),
+    args_base64: Buffer.from(JSON.stringify(args)).toString('base64'),
     block_id: blockId,
     finality,
   });
 
-  return (
-    result.result &&
-    result.result.length > 0 &&
-    JSON.parse(Buffer.from(result.result).toString())
-  );
+  return result.result && result.result.length > 0 && JSON.parse(Buffer.from(result.result).toString());
 }
 
 async function web4ViewCall(contractId, methodName, args, fallback) {
   args = args || {};
-  const url = new URL(
-    `https://rpc.web4.near.page/account/${contractId}/view/${methodName}`
-  );
+  const url = new URL(`https://rpc.web4.near.page/account/${contractId}/view/${methodName}`);
   Object.entries(args).forEach(([key, value]) => {
     if (value !== undefined) {
       url.searchParams.append(`${key}.json`, JSON.stringify(value));
@@ -485,7 +399,7 @@ async function web4ViewCall(contractId, methodName, args, fallback) {
   try {
     return await (await fetch(url.toString())).json();
   } catch (e) {
-    console.log("Web4 view call failed", url.toString());
+    console.log('Web4 view call failed', url.toString());
     console.error(e);
     return fallback();
   }
@@ -502,61 +416,53 @@ async function _initNear({
   if (!config) {
     config = {};
     if (!networkId) {
-      config.networkId = "mainnet";
+      config.networkId = 'mainnet';
     }
   }
   if (networkId && !config.networkId) {
     config.networkId = networkId;
   }
-  if (config.networkId === "mainnet") {
+  if (config.networkId === 'mainnet') {
     config = Object.assign({}, MainNearConfig, config);
-  } else if (config.networkId === "testnet") {
+  } else if (config.networkId === 'testnet') {
     config = Object.assign({}, TestNearConfig, config);
   }
   config.walletConnectCallback = walletConnectCallback;
-  config.customElements = Object.assign(
-    {},
-    config.customElements,
-    customElements
-  );
+  config.customElements = Object.assign({}, config.customElements, customElements);
   keyStore = keyStore ?? new nearAPI.keyStores.BrowserLocalStorageKeyStore();
 
-  const nearConnection = await nearAPI.connect(
-    Object.assign({ deps: { keyStore } }, config)
-  );
+  const nearConnection = await nearAPI.connect(Object.assign({ deps: { keyStore } }, config));
 
-  const calimeroConnection = await nearAPI.connect(
-    {
-      networkId: CalimeroConfig.networkId,
-      keyStore: keyStore,
-      signer: new nearAPI.InMemorySigner(keyStore),
-      nodeUrl: CalimeroConfig.calimeroUrl,
-      walletUrl: CalimeroConfig.walletUrl,
-      headers: {
-        ['x-api-key']: CalimeroConfig.calimeroToken,
-      },
-    }
-  );
+  const calimeroConnection = await nearAPI.connect({
+    networkId: CalimeroConfig.networkId,
+    keyStore: keyStore,
+    signer: new nearAPI.InMemorySigner(keyStore),
+    nodeUrl: CalimeroConfig.calimeroUrl,
+    walletUrl: CalimeroConfig.walletUrl,
+    headers: {
+      ['x-api-key']: CalimeroConfig.calimeroToken,
+    },
+  });
 
   const _near = {
     config,
     selector,
     keyStore,
     nearConnection,
-    calimeroConnection
+    calimeroConnection,
   };
 
   _near.nearArchivalConnection = nearAPI.Connection.fromConfig({
     networkId: config.networkId,
     provider: {
-      type: "JsonRpcProvider",
+      type: 'JsonRpcProvider',
       args: { url: config.archivalNodeUrl },
     },
-    signer: { type: "InMemorySigner", keyStore },
+    signer: { type: 'InMemorySigner', keyStore },
   });
 
   const transformBlockId = (blockId) =>
-    blockId === "optimistic" || blockId === "final"
+    blockId === 'optimistic' || blockId === 'final'
       ? {
           finality: blockId,
           blockId: undefined,
@@ -567,7 +473,7 @@ async function _initNear({
           blockId: parseInt(blockId),
         }
       : {
-          finality: config.defaultFinality ?? "optimistic",
+          finality: config.defaultFinality ?? 'optimistic',
           blockId: undefined,
         };
 
@@ -575,23 +481,20 @@ async function _initNear({
     const { blockId, finality } = transformBlockId(blockHeightOrFinality);
     const nearViewCall = () =>
       viewCall(
-        blockId
-          ? _near.nearArchivalConnection.provider
-          : _near.nearConnection.connection.provider,
+        blockId ? _near.nearArchivalConnection.provider : _near.nearConnection.connection.provider,
         blockId ?? undefined,
         contractId,
         methodName,
         args,
-        finality
+        finality,
       );
 
     const fastRpcCall = () =>
-      finality === "optimistic" && config.enableWeb4FastRpc
+      finality === 'optimistic' && config.enableWeb4FastRpc
         ? web4ViewCall(contractId, methodName, args, nearViewCall)
         : nearViewCall();
 
-    return contractId === config.contractName &&
-      (blockId || finality === "final")
+    return contractId === config.contractName && (blockId || finality === 'final')
       ? apiCall(config, methodName, args, blockId, fastRpcCall)
       : fastRpcCall();
   };
@@ -605,20 +508,27 @@ async function _initNear({
         contractId,
         methodName,
         args,
-        finality
+        finality,
       );
     return viewCalimeroCall();
-  }
+  };
 
-
-  _near.requestFak = (componentName, contractName, methodNames) => requestFak(componentName, _near, contractName, methodNames);
-  _near.requestCalimeroFak = (storageKey, contractName, methodNames) => requestCalimeroFak(storageKey, _near, contractName, methodNames);
-  _near.submitFakTransaction = (componentName, contractName, methodName, args, gas, deposit) => submitFakTransaction(componentName, _near, contractName, methodName, args, gas, deposit);
-  _near.signCalimeroFakTransaction = (storageKey, contractName, methodName, args, gas, deposit) => signCalimeroFakTransaction(storageKey, _near, contractName, methodName, args, gas, deposit);
-  _near.submitCalimeroFakTransaction = (storageKey, contractName, methodName, args, gas, deposit) => submitFakCalimeroTransaction(storageKey, _near, contractName, methodName, args, gas, deposit);
-  _near.verifyFak = (componentName, contractName, methodNames) => verifyFak(componentName, _near, contractName, methodNames);
-  _near.verifyCalimeroFak = (storageKey, contractName, methodNames) => verifyCalimeroFak(storageKey, _near, contractName, methodNames);
-  _near.signWithCalimeroFak = (storageKey, contractName, message) => signWithCalimeroFak(storageKey, _near, contractName, message);
+  _near.requestFak = (componentName, contractName, methodNames) =>
+    requestFak(componentName, _near, contractName, methodNames);
+  _near.requestCalimeroFak = (storageKey, contractName, methodNames) =>
+    requestCalimeroFak(storageKey, _near, contractName, methodNames);
+  _near.submitFakTransaction = (componentName, contractName, methodName, args, gas, deposit) =>
+    submitFakTransaction(componentName, _near, contractName, methodName, args, gas, deposit);
+  _near.signCalimeroFakTransaction = (storageKey, contractName, methodName, args, gas, deposit) =>
+    signCalimeroFakTransaction(storageKey, _near, contractName, methodName, args, gas, deposit);
+  _near.submitCalimeroFakTransaction = (storageKey, contractName, methodName, args, gas, deposit) =>
+    submitFakCalimeroTransaction(storageKey, _near, contractName, methodName, args, gas, deposit);
+  _near.verifyFak = (componentName, contractName, methodNames) =>
+    verifyFak(componentName, _near, contractName, methodNames);
+  _near.verifyCalimeroFak = (storageKey, contractName, methodNames) =>
+    verifyCalimeroFak(storageKey, _near, contractName, methodNames);
+  _near.signWithCalimeroFak = (storageKey, contractName, message) =>
+    signWithCalimeroFak(storageKey, _near, contractName, message);
   _near.block = (blockHeightOrFinality) => {
     const blockQuery = transformBlockId(blockHeightOrFinality);
     const provider = blockQuery.blockId
@@ -628,24 +538,18 @@ async function _initNear({
   };
   _near.functionCall = (contractName, methodName, args, gas, deposit) =>
     functionCall(_near, contractName, methodName, args, gas, deposit);
-  _near.sendTransactions = (transactions) =>
-    sendTransactions(_near, transactions);
+  _near.sendTransactions = (transactions) => sendTransactions(_near, transactions);
 
   _near.contract = setupContract(_near, config.contractName, {
     viewMethods: [
-      "storage_balance_of",
-      "get",
-      "get_num_accounts",
-      "get_accounts_paged",
-      "is_write_permission_granted",
-      "keys",
+      'storage_balance_of',
+      'get',
+      'get_num_accounts',
+      'get_accounts_paged',
+      'is_write_permission_granted',
+      'keys',
     ],
-    changeMethods: [
-      "set",
-      "grant_write_permission",
-      "storage_deposit",
-      "storage_withdraw",
-    ],
+    changeMethods: ['set', 'grant_write_permission', 'storage_deposit', 'storage_withdraw'],
   });
 
   _near.accountState = (accountId) => accountState(_near, accountId);
@@ -661,42 +565,39 @@ export const useInitNear = singletonHook({}, () => {
     initNear: useMemo(
       () => (args) => {
         const defaultNetworkId = args.config?.networkId || args.networkId;
-        const defaultNetworkIdIsNotMainnetOrTestnet =
-          defaultNetworkId !== "mainnet" && defaultNetworkId !== "testnet";
+        const defaultNetworkIdIsNotMainnetOrTestnet = defaultNetworkId !== 'mainnet' && defaultNetworkId !== 'testnet';
         const testnetArgs =
-          defaultNetworkId === "testnet"
+          defaultNetworkId === 'testnet'
             ? args
             : {
                 ...args,
-                networkId: "testnet",
+                networkId: 'testnet',
                 config: undefined,
                 keyStore: undefined,
                 selector: undefined,
               };
         const mainnetArgs =
-          defaultNetworkId === "mainnet"
+          defaultNetworkId === 'mainnet'
             ? args
             : {
                 ...args,
-                networkId: "mainnet",
+                networkId: 'mainnet',
                 config: undefined,
                 keyStore: undefined,
                 selector: undefined,
               };
         return setNearPromise(
           Promise.all(
-            [testnetArgs, mainnetArgs]
-              .concat(defaultNetworkIdIsNotMainnetOrTestnet ? args : [])
-              .map(_initNear)
+            [testnetArgs, mainnetArgs].concat(defaultNetworkIdIsNotMainnetOrTestnet ? args : []).map(_initNear),
           ).then((nears) =>
             nears.map((n) => ({
               ...n,
               default: n.config.networkId === defaultNetworkId,
-            }))
-          )
+            })),
+          ),
         );
       },
-      []
+      [],
     ),
   };
 });
@@ -715,13 +616,13 @@ const useMultiNetworkNear = singletonHook(defaultNears, () => {
 
   return {
     default: nears.find((n) => n.default),
-    testnet: nears.find((n) => n.config.networkId === "testnet"),
-    mainnet: nears.find((n) => n.config.networkId === "mainnet"),
+    testnet: nears.find((n) => n.config.networkId === 'testnet'),
+    mainnet: nears.find((n) => n.config.networkId === 'mainnet'),
   };
 });
 
 export const useNear = (networkId) => {
   const multiNetworkNear = useMultiNetworkNear();
 
-  return multiNetworkNear[networkId || "default"] || null;
+  return multiNetworkNear[networkId || 'default'] || null;
 };
