@@ -1,21 +1,12 @@
-import React, { useCallback, useEffect, useState } from "react";
-import {
-  asyncCommit,
-  prepareCommit,
-  requestPermissionAndCommit,
-} from "../data/commitData";
-import {
-  computeWritePermission,
-  displayNear,
-  Loading,
-  StorageCostPerByte,
-} from "../data/utils";
-import Modal from "react-bootstrap/Modal";
-import { Markdown } from "./Markdown";
-import { useNear } from "../data/near";
-import { ToggleButton, ToggleButtonGroup } from "react-bootstrap";
-import { useCache } from "../data/cache";
-import { useAccountId } from "../data/account";
+import React, { useCallback, useEffect, useState } from 'react';
+import { asyncCommit, prepareCommit, requestPermissionAndCommit } from '../data/commitData';
+import { computeWritePermission, displayNear, Loading, StorageCostPerByte } from '../data/utils';
+import Modal from 'react-bootstrap/Modal';
+import { Markdown } from './Markdown';
+import { useNear } from '../data/near';
+import { ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
+import { useCache } from '../data/cache';
+import { useAccountId } from '../data/account';
 
 const jsonMarkdown = (data) => {
   const json = JSON.stringify(data, null, 2);
@@ -25,11 +16,11 @@ ${json}
 };
 
 const StorageDomain = {
-  page: "commit",
+  page: 'commit',
 };
 
 const StorageType = {
-  WritePermission: "write_permission",
+  WritePermission: 'write_permission',
 };
 
 export const CommitModal = (props) => {
@@ -98,9 +89,7 @@ export const CommitModal = (props) => {
   const onCommit = async () => {
     setCommitInProgress(true);
 
-    const newWritePermission =
-      giveWritePermission &&
-      computeWritePermission(writePermission, commit.data[accountId]);
+    const newWritePermission = giveWritePermission && computeWritePermission(writePermission, commit.data[accountId]);
     cache.localStorageSet(
       StorageDomain,
       {
@@ -108,7 +97,7 @@ export const CommitModal = (props) => {
         accountId,
         type: StorageType.WritePermission,
       },
-      newWritePermission
+      newWritePermission,
     );
     setWritePermission(newWritePermission);
 
@@ -120,7 +109,7 @@ export const CommitModal = (props) => {
         await requestPermissionAndCommit(near, commit.data, deposit);
       } else {
         // No permission for another account and not the owner. Can't commit.
-        alert("No permission to commit under given account");
+        alert('No permission to commit under given account');
       }
     }
     setCommit(null);
@@ -137,8 +126,7 @@ export const CommitModal = (props) => {
     setCommitInProgress(false);
   };
 
-  const cantCommit =
-    commit && !commit.permissionGranted && accountId !== near.accountId;
+  const cantCommit = commit && !commit.permissionGranted && accountId !== near.accountId;
 
   if (
     !commitInProgress &&
@@ -152,9 +140,8 @@ export const CommitModal = (props) => {
     const deposit = commit.deposit.add(StorageCostPerByte.mul(extraStorage));
     if (deposit.eq(0) && commit.permissionGranted) {
       if (
-        JSON.stringify(
-          computeWritePermission(writePermission, commit.data[accountId])
-        ) === JSON.stringify(writePermission)
+        JSON.stringify(computeWritePermission(writePermission, commit.data[accountId])) ===
+        JSON.stringify(writePermission)
       ) {
         setAsyncAsyncCommitStarted(true);
         onCommit().then(() => setAsyncAsyncCommitStarted(false));
@@ -162,8 +149,7 @@ export const CommitModal = (props) => {
     }
   }
 
-  const show =
-    !!commit && showIntent && !asyncCommitStarted && writePermission !== null;
+  const show = !!commit && showIntent && !asyncCommitStarted && writePermission !== null;
 
   return (
     <Modal size="xl" centered scrollable show={show} onHide={onCancel}>
@@ -174,36 +160,24 @@ export const CommitModal = (props) => {
         {cantCommit ? (
           <div>
             <h5>
-              Can't commit, because the account {near.accountId} doesn't have
-              permission to write under pretended account {accountId}
+              Can't commit, because the account {near.accountId} doesn't have permission to write under pretended
+              account {accountId}
             </h5>
           </div>
         ) : commit ? (
           <div>
-            <div>
-              {commit.data ? (
-                <Markdown text={jsonMarkdown(commit.data)} />
-              ) : (
-                <h5>No new data to save</h5>
-              )}
-            </div>
+            <div>{commit.data ? <Markdown text={jsonMarkdown(commit.data)} /> : <h5>No new data to save</h5>}</div>
             {commit.data && commit?.deposit?.gt(0) && (
               <div>
                 <h6>
-                  Required storage deposit{" "}
-                  <small className="text-secondary">
-                    (can be recovered later)
-                  </small>
+                  Required storage deposit <small className="text-secondary">(can be recovered later)</small>
                 </h6>
                 <div className="mb-2">
-                  {commit.deposit.div(StorageCostPerByte).toFixed(0)} bytes ={" "}
-                  {displayNear(commit.deposit)}
+                  {commit.deposit.div(StorageCostPerByte).toFixed(0)} bytes = {displayNear(commit.deposit)}
                 </div>
                 <h6>
-                  Optional storage deposit{" "}
-                  <small className="text-secondary">
-                    (can be used to avoid future wallet TX confirmation)
-                  </small>
+                  Optional storage deposit{' '}
+                  <small className="text-secondary">(can be used to avoid future wallet TX confirmation)</small>
                 </h6>
                 <div>
                   <ToggleButtonGroup
@@ -213,32 +187,16 @@ export const CommitModal = (props) => {
                     onChange={setExtraStorage}
                     disabled={commitInProgress}
                   >
-                    <ToggleButton
-                      id="esd-0"
-                      variant="outline-success"
-                      value={0}
-                    >
+                    <ToggleButton id="esd-0" variant="outline-success" value={0}>
                       No Deposit
                     </ToggleButton>
-                    <ToggleButton
-                      id="esd-5000"
-                      variant="outline-success"
-                      value={5000}
-                    >
+                    <ToggleButton id="esd-5000" variant="outline-success" value={5000}>
                       0.05 NEAR (5Kb)
                     </ToggleButton>
-                    <ToggleButton
-                      id="esd-20000"
-                      variant="outline-success"
-                      value={20000}
-                    >
+                    <ToggleButton id="esd-20000" variant="outline-success" value={20000}>
                       0.2 NEAR (20Kb)
                     </ToggleButton>
-                    <ToggleButton
-                      id="esd-100000"
-                      variant="outline-success"
-                      value={100000}
-                    >
+                    <ToggleButton id="esd-100000" variant="outline-success" value={100000}>
                       1 NEAR (100Kb)
                     </ToggleButton>
                   </ToggleButtonGroup>
@@ -257,12 +215,8 @@ export const CommitModal = (props) => {
                     setGiveWritePermission(e.target.checked);
                   }}
                 />
-                <label
-                  className="form-check-label"
-                  htmlFor="dont-ask-for-widget"
-                >
-                  Don't ask again for saving similar data by{" "}
-                  <span className="font-monospace">{widgetSrc}</span>
+                <label className="form-check-label" htmlFor="dont-ask-for-widget">
+                  Don't ask again for saving similar data by <span className="font-monospace">{widgetSrc}</span>
                 </label>
               </div>
             )}
@@ -282,11 +236,7 @@ export const CommitModal = (props) => {
         >
           {commitInProgress && Loading} Save Data
         </button>
-        <button
-          className="btn btn-secondary"
-          onClick={onCancel}
-          disabled={commitInProgress}
-        >
+        <button className="btn btn-secondary" onClick={onCancel} disabled={commitInProgress}>
           Close
         </button>
       </Modal.Footer>
@@ -297,17 +247,7 @@ export const CommitModal = (props) => {
 export const CommitButton = (props) => {
   const accountId = useAccountId(props.networkId);
 
-  const {
-    data,
-    children,
-    onClick,
-    onCommit,
-    onCancel,
-    disabled,
-    widgetSrc,
-    force,
-    ...rest
-  } = props;
+  const { data, children, onClick, onCommit, onCancel, disabled, widgetSrc, force, ...rest } = props;
 
   const [computedData, setComputedData] = useState(null);
 
@@ -318,7 +258,7 @@ export const CommitButton = (props) => {
         disabled={disabled || !data || !!computedData || !accountId}
         onClick={(e) => {
           e.preventDefault();
-          setComputedData(typeof data === "function" ? data() : data);
+          setComputedData(typeof data === 'function' ? data() : data);
           if (onClick) {
             onClick();
           }

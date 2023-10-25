@@ -113,7 +113,9 @@
     "dev": "npm run webpack -- --env mode=development envfile=.env.staging.local",
     "dev:internal": "npm run webpack -- --env mode=development envfile=.env.internal.local",
     "dev:community": "npm run webpack -- --env mode=development envfile=.env.community.local",
-    "build": "npm run webpack -- --env mode=production"
+    "build": "npm run webpack -- --env mode=production",
+    "prettier": "prettier --check 'src/**/*.{js,jsx,ts,tsx,json}'",
+    "prettier:write": "prettier --write 'src/**/*.{js,jsx,ts,tsx,json}'"
   },
   "eslintConfig": {
     "extends": [

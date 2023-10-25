@@ -1,7 +1,7 @@
-import Big from "big.js";
-import React from "react";
-import equal from "deep-equal";
-import { ethers } from "ethers";
+import Big from 'big.js';
+import React from 'react';
+import equal from 'deep-equal';
+import { ethers } from 'ethers';
 
 export const TGas = Big(10).pow(12);
 export const MaxGasPerTransaction = TGas.mul(250);
@@ -13,13 +13,7 @@ const ValidAccountRe = /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
 export const OneNear = Big(10).pow(24);
 const AccountSafetyMargin = OneNear.div(2);
 
-export const Loading = (
-  <span
-    className="spinner-grow spinner-grow-sm me-1"
-    role="status"
-    aria-hidden="true"
-  />
-);
+export const Loading = <span className="spinner-grow spinner-grow-sm me-1" role="status" aria-hidden="true" />;
 
 export const ErrorFallback = ({ error }) => {
   return (
@@ -41,18 +35,17 @@ export function isValidAccountId(accountId) {
 
 const toCamel = (s) => {
   return s.replace(/([-_][a-z])/gi, ($1) => {
-    return $1.toUpperCase().replace("-", "").replace("_", "");
+    return $1.toUpperCase().replace('-', '').replace('_', '');
   });
 };
 
 export const isArray = (a) => Array.isArray(a);
 
-export const isObject = (o) =>
-  o === Object(o) && !isArray(o) && typeof o !== "function";
+export const isObject = (o) => o === Object(o) && !isArray(o) && typeof o !== 'function';
 
-export const isString = (s) => typeof s === "string";
+export const isString = (s) => typeof s === 'string';
 
-export const isFunction = (f) => typeof f === "function";
+export const isFunction = (f) => typeof f === 'function';
 
 export const keysToCamel = function (o) {
   if (isObject(o)) {
@@ -88,10 +81,10 @@ export const bigMax = (a, b) => {
 
 export const bigToString = (b, p, len) => {
   if (b === null) {
-    return "???";
+    return '???';
   }
   let s = b.toFixed();
-  let pos = s.indexOf(".");
+  let pos = s.indexOf('.');
   p = p || 6;
   len = len || 7;
   if (pos > 0) {
@@ -106,11 +99,11 @@ export const bigToString = (b, p, len) => {
     pos = s.length;
   }
   for (let i = pos - 4; i >= 0; i -= 3) {
-    s = s.slice(0, i + 1) + "," + s.slice(i + 1);
+    s = s.slice(0, i + 1) + ',' + s.slice(i + 1);
   }
 
-  if (s === "0.000000" && p === 6 && len === 7) {
-    return "<0.000001";
+  if (s === '0.000000' && p === 6 && len === 7) {
+    return '<0.000001';
   }
 
   return s;
@@ -118,15 +111,14 @@ export const bigToString = (b, p, len) => {
 
 export const displayNear = (balance) =>
   !balance ? (
-    "???"
+    '???'
   ) : balance.eq(1) ? (
     <>
       1 <span className="text-secondary">yoctoNEAR</span>
     </>
   ) : (
     <>
-      {bigToString(balance.div(OneNear))}{" "}
-      <span className="text-secondary">NEAR</span>
+      {bigToString(balance.div(OneNear))} <span className="text-secondary">NEAR</span>
     </>
   );
 
@@ -136,14 +128,14 @@ export const displayGas = (gas) =>
       {bigToString(gas.div(TGas))} <span className="text-secondary">TGas</span>
     </>
   ) : (
-    "???"
+    '???'
   );
 
 export const dateToString = (d) => {
-  return d.toLocaleString("en-us", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+  return d.toLocaleString('en-us', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 };
 
@@ -153,9 +145,7 @@ export const displayTime = (d) => {
 
 export const availableNearBalance = (account) => {
   if (account && !account.loading && account.state) {
-    let balance = Big(account.state.amount).sub(
-      Big(account.state.storage_usage).mul(Big(StorageCostPerByte))
-    );
+    let balance = Big(account.state.amount).sub(Big(account.state.storage_usage).mul(Big(StorageCostPerByte)));
     if (balance.gt(AccountSafetyMargin)) {
       return balance.sub(AccountSafetyMargin);
     }
@@ -163,14 +153,13 @@ export const availableNearBalance = (account) => {
   return Big(0);
 };
 
-export const isoDate = (d) =>
-  d ? new Date(d).toISOString().substring(0, 10) : "";
+export const isoDate = (d) => (d ? new Date(d).toISOString().substring(0, 10) : '');
 
 export const ipfsUpload = async (f) => {
-  const res = await fetch("https://ipfs.near.social/add", {
-    method: "POST",
+  const res = await fetch('https://ipfs.near.social/add', {
+    method: 'POST',
     headers: {
-      Accept: "application/json",
+      Accept: 'application/json',
     },
     body: f,
   });
@@ -191,31 +180,23 @@ export const estimateDataSize = (data, prevData) =>
             s +
             (prevValue !== undefined
               ? estimateDataSize(value, prevValue)
-              : key.length * 2 +
-                estimateDataSize(value, undefined) +
-                EstimatedKeyValueSize)
+              : key.length * 2 + estimateDataSize(value, undefined) + EstimatedKeyValueSize)
           );
         },
-        isObject(prevData) ? 0 : EstimatedNodeSize
+        isObject(prevData) ? 0 : EstimatedNodeSize,
       )
     : (data?.length || 8) - (isString(prevData) ? prevData.length : 0);
 
-export const extractKeys = (data, prefix = "") =>
+export const extractKeys = (data, prefix = '') =>
   Object.entries(data)
-    .map(([key, value]) =>
-      isObject(value)
-        ? extractKeys(value, `${prefix}${key}/`)
-        : `${prefix}${key}`
-    )
+    .map(([key, value]) => (isObject(value) ? extractKeys(value, `${prefix}${key}/`) : `${prefix}${key}`))
     .flat();
 
 export const removeDuplicates = (data, prevData) => {
   const obj = Object.entries(data).reduce((obj, [key, value]) => {
     const prevValue = isObject(prevData) ? prevData[key] : undefined;
     if (isObject(value)) {
-      const newValue = isObject(prevValue)
-        ? removeDuplicates(value, prevValue)
-        : value;
+      const newValue = isObject(prevValue) ? removeDuplicates(value, prevValue) : value;
       if (newValue !== undefined) {
         obj[key] = newValue;
       }
@@ -241,56 +222,34 @@ export const convertToStringLeaves = (data) => {
 
 const matchGet = (obj, keys) => {
   const matchKey = keys[0];
-  let isRecursiveMatch = matchKey === "**";
+  let isRecursiveMatch = matchKey === '**';
   if (isRecursiveMatch) {
     return keys.length === 1;
   }
-  const values =
-    matchKey === "*" || isRecursiveMatch
-      ? Object.values(obj)
-      : matchKey in obj
-      ? [obj[matchKey]]
-      : [];
+  const values = matchKey === '*' || isRecursiveMatch ? Object.values(obj) : matchKey in obj ? [obj[matchKey]] : [];
 
   return values.some((value) =>
-    isObject(value)
-      ? keys.length > 1
-        ? matchGet(value, keys.slice(1))
-        : value[""] !== undefined
-      : keys.length === 1
+    isObject(value) ? (keys.length > 1 ? matchGet(value, keys.slice(1)) : value[''] !== undefined) : keys.length === 1,
   );
 };
 
 const matchKeys = (obj, keys) => {
   const matchKey = keys[0];
-  const values =
-    matchKey === "*"
-      ? Object.values(obj)
-      : matchKey in obj
-      ? [obj[matchKey]]
-      : [];
+  const values = matchKey === '*' ? Object.values(obj) : matchKey in obj ? [obj[matchKey]] : [];
 
-  return values.some(
-    (value) =>
-      keys.length === 1 || (isObject(value) && matchKeys(value, keys.slice(1)))
-  );
+  return values.some((value) => keys.length === 1 || (isObject(value) && matchKeys(value, keys.slice(1))));
 };
 
 export const patternMatch = (method, pattern, data) => {
-  const path = pattern.split("/");
-  return method === "get"
-    ? matchGet(data, path)
-    : method === "keys" && matchKeys(data, path);
+  const path = pattern.split('/');
+  return method === 'get' ? matchGet(data, path) : method === 'keys' && matchKeys(data, path);
 };
 
 export const indexMatch = (action, key, data) => {
   return Object.values(data).some((value) => {
     const indexValue = value?.index?.[action];
     try {
-      return (
-        indexValue &&
-        JSON.stringify(JSON.parse(indexValue).key) === JSON.stringify(key)
-      );
+      return indexValue && JSON.stringify(JSON.parse(indexValue).key) === JSON.stringify(key);
     } catch {
       return false;
     }
@@ -305,9 +264,7 @@ const KnownSecondLevelKeys = {
 };
 
 export const computeWritePermission = (previousPermissions, data) => {
-  const permissions = isObject(previousPermissions)
-    ? JSON.parse(JSON.stringify(previousPermissions))
-    : {};
+  const permissions = isObject(previousPermissions) ? JSON.parse(JSON.stringify(previousPermissions)) : {};
 
   if (isObject(data)) {
     Object.entries(data).forEach(([key, value]) => {
@@ -335,34 +292,27 @@ export const computeWritePermission = (previousPermissions, data) => {
 };
 
 function isGetter(obj, prop) {
-  return !!Object.getOwnPropertyDescriptor(obj, prop)["get"];
+  return !!Object.getOwnPropertyDescriptor(obj, prop)['get'];
 }
 
 export const deepFreeze = (obj) => {
   Object.freeze(obj);
   Object.keys(obj).forEach((prop) => {
-    if (
-      !isGetter(obj, prop) &&
-      typeof obj[prop] === "object" &&
-      !Object.isFrozen(obj[prop])
-    ) {
+    if (!isGetter(obj, prop) && typeof obj[prop] === 'object' && !Object.isFrozen(obj[prop])) {
       deepFreeze(obj[prop]);
     }
   });
   return obj;
 };
 
-export const ReactKey = "$$typeof";
-export const isReactObject = (o) =>
-  o !== null && typeof o === "object" && !!o[ReactKey];
+export const ReactKey = '$$typeof';
+export const isReactObject = (o) => o !== null && typeof o === 'object' && !!o[ReactKey];
 
 export const deepCopy = (o) => {
   if (Array.isArray(o)) {
     return o.map((v) => deepCopy(v));
   } else if (o instanceof Map) {
-    return new Map(
-      [...o.entries()].map(([k, v]) => [deepCopy(k), deepCopy(v)])
-    );
+    return new Map([...o.entries()].map(([k, v]) => [deepCopy(k), deepCopy(v)]));
   } else if (o instanceof Set) {
     return new Set([...o].map((v) => deepCopy(v)));
   } else if (Buffer.isBuffer(o)) {
@@ -385,10 +335,8 @@ export const deepCopy = (o) => {
     if (isReactObject(o)) {
       return o;
     }
-    return Object.fromEntries(
-      Object.entries(o).map(([key, value]) => [key, deepCopy(value)])
-    );
-  } else if (o === undefined || typeof o === "function") {
+    return Object.fromEntries(Object.entries(o).map(([key, value]) => [key, deepCopy(value)]));
+  } else if (o === undefined || typeof o === 'function') {
     return o;
   } else {
     return JSON.parse(JSON.stringify(o));

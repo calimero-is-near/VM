@@ -1,11 +1,11 @@
-import "./quill.snow.css";
-import React, { useEffect } from "react";
-import ReactQuill from "react-quill";
+import './quill.snow.css';
+import React, { useEffect } from 'react';
+import ReactQuill from 'react-quill';
 
 export const MarkdownEditor = (props) => {
   useEffect(() => {
     if (props.selectedEmoji) {
-      let newValue = "";
+      let newValue = '';
       if (props.value) {
         newValue = `${props.value.replace(/<p><br><\/p>\s*$/i, '')}${props.selectedEmoji}`;
       } else {
@@ -14,24 +14,24 @@ export const MarkdownEditor = (props) => {
       props.setValue(newValue);
       props.resetSelectedEmoji();
     } else if (!props.value) {
-      props.setValue("");
+      props.setValue('');
     }
   }, [props.selectedEmoji, props.value]);
 
-  var toolbarOptions = ['bold', 'italic', 'underline', 'strike', { 'list': 'ordered' }, { 'list': 'bullet' }];
+  var toolbarOptions = ['bold', 'italic', 'underline', 'strike', { list: 'ordered' }, { list: 'bullet' }];
 
   return (
     <ReactQuill
       modules={{
-        toolbar: toolbarOptions
+        toolbar: toolbarOptions,
       }}
       theme="snow"
       value={props.value}
       onChange={props.setValue}
       onKeyDown={(e) => {
-        if (e.key === "Enter" && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey) {
           props.handleMessageSent();
-          props.setValue("");
+          props.setValue('');
         }
       }}
     />

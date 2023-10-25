@@ -1,7 +1,6 @@
-import { findAndReplace } from "mdast-util-find-and-replace";
+import { findAndReplace } from 'mdast-util-find-and-replace';
 
-const mentionRegex =
-  /@((?:(?:[a-z\d]+[-_])*[a-z\d]+\.)*(?:[a-z\d]+[-_])*[a-z\d]+)/gi;
+const mentionRegex = /@((?:(?:[a-z\d]+[-_])*[a-z\d]+\.)*(?:[a-z\d]+[-_])*[a-z\d]+)/gi;
 
 export default function mentions() {
   function replace(value, username, match) {
@@ -14,9 +13,9 @@ export default function mentions() {
       return false;
     }
 
-    let node = { type: "text", value };
+    let node = { type: 'text', value };
     node = {
-      type: "strong",
+      type: 'strong',
       children: [node],
       data: {
         hProperties: { accountId: username },
