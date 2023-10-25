@@ -18,12 +18,16 @@ import Files from "react-files";
 import { sanitizeUrl } from "@braintree/sanitize-url";
 import { Markdown } from "../components/Markdown";
 import InfiniteScroll from "react-infinite-scroller";
-import { VirtualizedChat, messageRenderer, Message  } from "virtualized-chat";
+import { VirtualizedChat, messageRenderer, Message } from "virtualized-chat";
 import { CommitButton } from "../components/Commit";
 import { Typeahead } from "react-bootstrap-typeahead";
 import styled, { isStyledComponent, keyframes } from "styled-components";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
-import { randomBytes, createCipheriv, createDecipheriv } from 'crypto-browserify';
+import {
+  randomBytes,
+  createCipheriv,
+  createDecipheriv,
+} from "crypto-browserify";
 import Big from "big.js";
 import * as elliptic from "elliptic";
 import BN from "bn.js";
@@ -67,29 +71,29 @@ import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import * as Toolbar from "@radix-ui/react-toolbar";
 import * as RadixTooltip from "@radix-ui/react-tooltip";
 
-const frozenNacl = Object.freeze( {
-  randomBytes: deepFreeze( nacl.randomBytes ),
-  secretbox: deepFreeze( nacl.secretbox ),
-  scalarMult: deepFreeze( nacl.scalarMult ),
-  box: deepFreeze( nacl.box ),
-  sign: deepFreeze( nacl.sign ),
-  hash: deepFreeze( nacl.hash ),
-  verify: deepFreeze( nacl.verify ),
-} );
+const frozenNacl = Object.freeze({
+  randomBytes: deepFreeze(nacl.randomBytes),
+  secretbox: deepFreeze(nacl.secretbox),
+  scalarMult: deepFreeze(nacl.scalarMult),
+  box: deepFreeze(nacl.box),
+  sign: deepFreeze(nacl.sign),
+  hash: deepFreeze(nacl.hash),
+  verify: deepFreeze(nacl.verify),
+});
 
-const frozenEthers = Object.freeze( {
-  utils: deepFreeze( ethers.utils ),
-  BigNumber: deepFreeze( ethers.BigNumber ),
-  Contract: deepFreeze( ethers.Contract ),
-  providers: deepFreeze( ethers.providers ),
-} );
+const frozenEthers = Object.freeze({
+  utils: deepFreeze(ethers.utils),
+  BigNumber: deepFreeze(ethers.BigNumber),
+  Contract: deepFreeze(ethers.Contract),
+  providers: deepFreeze(ethers.providers),
+});
 
 // `nanoid.nanoid()` is a but odd, but it seems better to match the official
 // API than to create an alias
-const frozenNanoid = Object.freeze( {
-  nanoid: deepFreeze( nanoid ),
-  customAlphabet: deepFreeze( customAlphabet ),
-} );
+const frozenNanoid = Object.freeze({
+  nanoid: deepFreeze(nanoid),
+  customAlphabet: deepFreeze(customAlphabet),
+});
 
 const LoopLimit = 1000000;
 const MaxDepth = 32;
@@ -250,7 +254,7 @@ const Keywords = {
 };
 
 const GlobalInjected = deepFreeze(
-  cloneDeep( {
+  cloneDeep({
     // Functions
     encodeURIComponent,
     decodeURIComponent,
@@ -305,7 +309,7 @@ const GlobalInjected = deepFreeze(
     Uint8Array,
     Map,
     Set,
-  } )
+  })
 );
 
 const NativeFunctions = {
@@ -322,7 +326,7 @@ const NativeFunctions = {
 };
 
 const ReservedKeys = {
-  [ ReactKey ]: true,
+  [ReactKey]: true,
   constructor: true,
   prototype: true,
   __proto__: true,
@@ -338,68 +342,68 @@ const AcornOptions = {
 };
 
 const ParsedCodeCache = {};
-const JsxParser = Parser.extend( jsx() );
+const JsxParser = Parser.extend(jsx());
 
-const parseCode = ( code ) => {
-  if ( code in ParsedCodeCache ) {
-    return ParsedCodeCache[ code ];
+const parseCode = (code) => {
+  if (code in ParsedCodeCache) {
+    return ParsedCodeCache[code];
   }
-  return ( ParsedCodeCache[ code ] = JsxParser.parse( code, AcornOptions ) );
+  return (ParsedCodeCache[code] = JsxParser.parse(code, AcornOptions));
 };
 
-const assertNotReservedKey = ( key ) => {
-  if ( ReservedKeys[ key ] === true ) {
-    throw new Error( `${ key } is reserved and can't be used` );
-  }
-};
-
-const assertNotReactObject = ( o ) => {
-  if ( isReactObject( o ) ) {
-    throw new Error( "React objects shouldn't dereferenced" );
+const assertNotReservedKey = (key) => {
+  if (ReservedKeys[key] === true) {
+    throw new Error(`${key} is reserved and can't be used`);
   }
 };
 
-const assertValidObject = ( o ) => {
-  if ( o !== null && typeof o === "object" ) {
-    Object.entries( o ).forEach( ( [ key, value ] ) => {
-      assertNotReservedKey( key );
-      assertValidObject( value );
-    } );
+const assertNotReactObject = (o) => {
+  if (isReactObject(o)) {
+    throw new Error("React objects shouldn't dereferenced");
   }
 };
 
-const assertRadixComponent = ( element ) => {
-  let isRadixElement = Object.keys( RadixTags ).includes( element.split( "." )[ 0 ] );
+const assertValidObject = (o) => {
+  if (o !== null && typeof o === "object") {
+    Object.entries(o).forEach(([key, value]) => {
+      assertNotReservedKey(key);
+      assertValidObject(value);
+    });
+  }
+};
 
-  if ( !isRadixElement ) return;
+const assertRadixComponent = (element) => {
+  let isRadixElement = Object.keys(RadixTags).includes(element.split(".")[0]);
 
-  const elementTokens = element.split( "." );
-  const RadixComp = elementTokens.reduce( ( acc, curr ) => {
-    return acc[ curr ];
-  }, RadixTags );
+  if (!isRadixElement) return;
 
-  if ( RadixComp === undefined ) {
-    throw new Error( `"${ element }" is not a valid Radix component` );
+  const elementTokens = element.split(".");
+  const RadixComp = elementTokens.reduce((acc, curr) => {
+    return acc[curr];
+  }, RadixTags);
+
+  if (RadixComp === undefined) {
+    throw new Error(`"${element}" is not a valid Radix component`);
   }
 
   return RadixComp;
 };
 
-const maybeSubscribe = ( subscribe, blockId ) =>
+const maybeSubscribe = (subscribe, blockId) =>
   subscribe &&
-  ( blockId === undefined ||
+  (blockId === undefined ||
     blockId === null ||
     blockId === "final" ||
-    blockId === "optimistic" );
+    blockId === "optimistic");
 
-const requireIdentifier = ( id ) => {
-  if ( id.type !== "Identifier" ) {
-    throw new Error( "Non identifier: " + id.type );
+const requireIdentifier = (id) => {
+  if (id.type !== "Identifier") {
+    throw new Error("Non identifier: " + id.type);
   }
   const name = id.name;
-  assertNotReservedKey( name );
-  if ( name in Keywords ) {
-    throw new Error( "Cannot use keyword: " + name );
+  assertNotReservedKey(name);
+  if (name in Keywords) {
+    throw new Error("Cannot use keyword: " + name);
   }
   return {
     type: "Identifier",
@@ -407,215 +411,215 @@ const requireIdentifier = ( id ) => {
   };
 };
 
-const requireJSXIdentifier = ( id ) => {
-  if ( id.type !== "JSXIdentifier" ) {
-    throw new Error( "Non JSXIdentifier: " + id.type );
+const requireJSXIdentifier = (id) => {
+  if (id.type !== "JSXIdentifier") {
+    throw new Error("Non JSXIdentifier: " + id.type);
   }
   return id.name;
 };
 
-const requireJSXIdentifierOrMemberExpression = ( id ) => {
-  if ( id.type === "JSXIdentifier" ) {
+const requireJSXIdentifierOrMemberExpression = (id) => {
+  if (id.type === "JSXIdentifier") {
     return id.name;
-  } else if ( id.type === "JSXMemberExpression" ) {
+  } else if (id.type === "JSXMemberExpression") {
     return (
-      requireJSXIdentifierOrMemberExpression( id.object ) +
+      requireJSXIdentifierOrMemberExpression(id.object) +
       "." +
-      requireJSXIdentifier( id.property )
+      requireJSXIdentifier(id.property)
     );
   } else {
-    throw new Error( "Non JSXIdentifier or JSXMemberExpression: " + id.type );
+    throw new Error("Non JSXIdentifier or JSXMemberExpression: " + id.type);
   }
 };
 
-const requirePattern = ( id ) => {
-  if ( id.type === "Identifier" ) {
-    return requireIdentifier( id );
-  } else if ( id.type === "ArrayPattern" ) {
+const requirePattern = (id) => {
+  if (id.type === "Identifier") {
+    return requireIdentifier(id);
+  } else if (id.type === "ArrayPattern") {
     return {
       type: "ArrayPattern",
-      elements: id.elements.map( requirePattern ),
+      elements: id.elements.map(requirePattern),
     };
-  } else if ( id.type === "ObjectPattern" ) {
+  } else if (id.type === "ObjectPattern") {
     return {
       type: "ObjectPattern",
-      properties: id.properties.map( ( p ) => {
-        if ( p.type === "Property" ) {
+      properties: id.properties.map((p) => {
+        if (p.type === "Property") {
           return {
-            key: requireIdentifier( p.key ),
-            value: requirePattern( p.value ),
+            key: requireIdentifier(p.key),
+            value: requirePattern(p.value),
           };
-        } else if ( p.type === "RestElement" ) {
+        } else if (p.type === "RestElement") {
           return {
             type: "RestElement",
-            argument: requireIdentifier( p.argument ),
+            argument: requireIdentifier(p.argument),
           };
         } else {
-          throw new Error( "Unknown property type: " + p.type );
+          throw new Error("Unknown property type: " + p.type);
         }
-      } ),
+      }),
     };
-  } else if ( id.type === "RestElement" ) {
+  } else if (id.type === "RestElement") {
     return {
       type: "RestElement",
-      argument: requireIdentifier( id.argument ),
+      argument: requireIdentifier(id.argument),
     };
   } else {
-    throw new Error( "Unknown pattern: " + id.type );
+    throw new Error("Unknown pattern: " + id.type);
   }
 };
 
 class Stack {
-  constructor ( prevStack, state ) {
+  constructor(prevStack, state) {
     this.prevStack = prevStack;
     this.state = state;
   }
 
-  findObj ( name ) {
-    if ( name in this.state ) {
+  findObj(name) {
+    if (name in this.state) {
       return this.state;
     }
-    return this.prevStack ? this.prevStack.findObj( name ) : undefined;
+    return this.prevStack ? this.prevStack.findObj(name) : undefined;
   }
 
-  get ( name ) {
-    if ( name in this.state ) {
-      return this.state[ name ];
+  get(name) {
+    if (name in this.state) {
+      return this.state[name];
     }
-    return this.prevStack ? this.prevStack.get( name ) : undefined;
+    return this.prevStack ? this.prevStack.get(name) : undefined;
   }
 }
 
 class VmStack {
-  constructor ( vm, prevStack, state, isTrusted ) {
+  constructor(vm, prevStack, state, isTrusted) {
     this.gIndex = 0;
     this.hookIndex = 0;
     this.vm = vm;
     this.isTrusted = !!isTrusted;
-    this.stack = new Stack( prevStack, state );
+    this.stack = new Stack(prevStack, state);
   }
 
-  newStack ( isTrusted ) {
-    return new VmStack( this.vm, this.stack, {}, this.isTrusted || !!isTrusted );
+  newStack(isTrusted) {
+    return new VmStack(this.vm, this.stack, {}, this.isTrusted || !!isTrusted);
   }
 
-  executeExpression ( code ) {
-    ExpressionDebug && console.log( "Executing code:", code?.type );
-    const res = this.executeExpressionInternal( code );
-    ExpressionDebug && console.log( code?.type, res );
+  executeExpression(code) {
+    ExpressionDebug && console.log("Executing code:", code?.type);
+    const res = this.executeExpressionInternal(code);
+    ExpressionDebug && console.log(code?.type, res);
     return res;
   }
 
-  renderElement ( code ) {
+  renderElement(code) {
     let element =
       code.type === "JSXFragment"
         ? "Fragment"
-        : requireJSXIdentifierOrMemberExpression( code.openingElement.name );
-    let withChildren = ApprovedTags[ element ];
+        : requireJSXIdentifierOrMemberExpression(code.openingElement.name);
+    let withChildren = ApprovedTags[element];
     let customElement = null;
-    if ( withChildren === undefined ) {
-      if ( this.vm.near.config.customElements.hasOwnProperty( element ) ) {
+    if (withChildren === undefined) {
+      if (this.vm.near.config.customElements.hasOwnProperty(element)) {
         withChildren = true;
-        customElement = this.vm.near.config.customElements[ element ];
+        customElement = this.vm.near.config.customElements[element];
       }
     }
-    const RadixComp = assertRadixComponent( element );
+    const RadixComp = assertRadixComponent(element);
 
     const customComponent =
       withChildren === undefined &&
-      this.executeExpression( code.openingElement.name );
+      this.executeExpression(code.openingElement.name);
 
-    if ( withChildren === undefined && !RadixComp ) {
-      if ( customComponent === undefined ) {
-        throw new Error( "Unknown element: " + element );
+    if (withChildren === undefined && !RadixComp) {
+      if (customComponent === undefined) {
+        throw new Error("Unknown element: " + element);
       }
       if (
-        !isStyledComponent( customComponent ) &&
+        !isStyledComponent(customComponent) &&
         typeof customComponent !== "function"
       ) {
-        throw new Error( "Unsupported component: " + element );
+        throw new Error("Unsupported component: " + element);
       }
     }
 
     let attributes = {};
     const status = {};
-    if ( element === "input" ) {
+    if (element === "input") {
       attributes.className = "form-control";
-    } else if ( element === "CommitButton" ) {
+    } else if (element === "CommitButton") {
       attributes.className = "btn btn-success";
-    } else if ( element === "button" ) {
+    } else if (element === "button") {
       attributes.className = "btn btn-primary";
-    } else if ( element === "IpfsImageUpload" ) {
+    } else if (element === "IpfsImageUpload") {
       attributes.className = "btn btn-outline-primary";
     }
 
     const rawAttributes = {};
 
-    ( code.type === "JSXFragment"
+    (code.type === "JSXFragment"
       ? code.openingFragment
       : code.openingElement
-    ).attributes.forEach( ( attribute ) => {
-      if ( attribute.type === "JSXAttribute" ) {
-        const name = requireJSXIdentifier( attribute.name );
-        attributes[ name ] =
+    ).attributes.forEach((attribute) => {
+      if (attribute.type === "JSXAttribute") {
+        const name = requireJSXIdentifier(attribute.name);
+        attributes[name] =
           attribute.value === null
             ? true
-            : this.executeExpression( attribute.value );
-        if ( name === "value" || name === "image" || name === "onChange" ) {
-          rawAttributes[ name ] = attribute.value;
+            : this.executeExpression(attribute.value);
+        if (name === "value" || name === "image" || name === "onChange") {
+          rawAttributes[name] = attribute.value;
         }
-      } else if ( attribute.type === "JSXSpreadAttribute" ) {
-        const value = this.executeExpression( attribute.argument );
-        Object.assign( attributes, value );
+      } else if (attribute.type === "JSXSpreadAttribute") {
+        const value = this.executeExpression(attribute.argument);
+        Object.assign(attributes, value);
       } else {
-        throw new Error( "Unknown attribute type: " + attribute.type );
+        throw new Error("Unknown attribute type: " + attribute.type);
       }
-    } );
+    });
 
-    if ( attributes.ref === "forwardedRef" ) {
+    if (attributes.ref === "forwardedRef") {
       attributes = {
         ...attributes,
         ...this.vm.forwardedProps,
       };
     }
 
-    Object.entries( rawAttributes ).forEach( ( [ name, value ] ) => {
+    Object.entries(rawAttributes).forEach(([name, value]) => {
       if (
         name === "value" &&
         element === "input" &&
         attributes.type === "text" &&
         value.type === "JSXExpressionContainer" &&
-        !( "onChange" in rawAttributes )
+        !("onChange" in rawAttributes)
       ) {
-        const { obj, key } = this.resolveMemberExpression( value.expression, {
+        const { obj, key } = this.resolveMemberExpression(value.expression, {
           requireState: true,
           left: true,
-        } );
-        attributes.value = obj?.[ key ] || "";
-        attributes.onChange = ( e ) => {
+        });
+        attributes.value = obj?.[key] || "";
+        attributes.onChange = (e) => {
           e.preventDefault();
-          obj[ key ] = e.target.value;
-          this.vm.setReactState( this.vm.state.state );
+          obj[key] = e.target.value;
+          this.vm.setReactState(this.vm.state.state);
         };
       } else if (
         name === "image" &&
         element === "IpfsImageUpload" &&
         value.type === "JSXExpressionContainer"
       ) {
-        const { obj, key } = this.resolveMemberExpression( value.expression, {
+        const { obj, key } = this.resolveMemberExpression(value.expression, {
           requireState: true,
           left: true,
-        } );
-        status.img = obj[ key ];
-        attributes.onChange = ( files ) => {
-          if ( files?.length > 0 ) {
-            obj[ key ] = {
+        });
+        status.img = obj[key];
+        attributes.onChange = (files) => {
+          if (files?.length > 0) {
+            obj[key] = {
               uploading: true,
               cid: null,
             };
-            this.vm.setReactState( this.vm.state.state );
-            ipfsUpload( files[ 0 ] ).then( ( cid ) => {
-              if ( !this.vm.alive ) {
+            this.vm.setReactState(this.vm.state.state);
+            ipfsUpload(files[0]).then((cid) => {
+              if (!this.vm.alive) {
                 return;
               }
               const { obj, key } = this.vm.vmStack.resolveMemberExpression(
@@ -625,232 +629,231 @@ class VmStack {
                   left: true,
                 }
               );
-              obj[ key ] = {
+              obj[key] = {
                 cid,
               };
-              this.vm.setReactState( this.vm.state.state );
-            } );
+              this.vm.setReactState(this.vm.state.state);
+            });
           } else {
-            obj[ key ] = null;
-            this.vm.setReactState( this.vm.state.state );
+            obj[key] = null;
+            this.vm.setReactState(this.vm.state.state);
           }
         };
       }
-    } );
+    });
     attributes.key =
-      attributes.key ?? `${ this.vm.widgetSrc }-${ element }-${ this.vm.gIndex }`;
+      attributes.key ?? `${this.vm.widgetSrc}-${element}-${this.vm.gIndex}`;
     delete attributes.dangerouslySetInnerHTML;
     const basicElement =
-      ( isStyledComponent( customComponent ) && customComponent?.target ) ||
+      (isStyledComponent(customComponent) && customComponent?.target) ||
       element;
 
-    if ( attributes.as && !ApprovedTagsSimple[ attributes.as ] ) {
+    if (attributes.as && !ApprovedTagsSimple[attributes.as]) {
       delete attributes.as;
     }
-    if ( attributes.forwardedAs && !ApprovedTagsSimple[ attributes.forwardedAs ] ) {
+    if (attributes.forwardedAs && !ApprovedTagsSimple[attributes.forwardedAs]) {
       delete attributes.forwardedAs;
     }
 
-    if ( basicElement === "img" ) {
+    if (basicElement === "img") {
       attributes.alt = attributes.alt ?? "not defined";
-    } else if ( basicElement === "a" ) {
-      Object.entries( attributes ).forEach( ( [ name, value ] ) => {
-        if ( name.toLowerCase() === "href" ) {
-          attributes[ name ] = sanitizeUrl( value );
+    } else if (basicElement === "a") {
+      Object.entries(attributes).forEach(([name, value]) => {
+        if (name.toLowerCase() === "href") {
+          attributes[name] = sanitizeUrl(value);
         }
-      } );
-    } else if ( element === "Widget" ) {
+      });
+    } else if (element === "Widget") {
       attributes.depth = this.vm.depth + 1;
-      attributes.config = [ attributes.config, ...this.vm.widgetConfigs ].filter(
+      attributes.config = [attributes.config, ...this.vm.widgetConfigs].filter(
         Boolean
       );
-    } else if ( element === "CommitButton" ) {
+    } else if (element === "CommitButton") {
       attributes.networkId = this.vm.networkId;
     }
 
-    if ( withChildren === false && code.children.length ) {
+    if (withChildren === false && code.children.length) {
       throw new Error(
         "And element '" + element + "' contains children, but shouldn't"
       );
     }
 
-    if ( element === "GlobalStateProvider" ) {
-      if ( !attributes.value ) {
-        throw new Error( "GlobalStateProvider requires a value prop" );
+    if (element === "GlobalStateProvider") {
+      if (!attributes.value) {
+        throw new Error("GlobalStateProvider requires a value prop");
       }
-      if ( !isArray( attributes.value ) || attributes.value.length !== 2 ) {
-        throw new Error( "Invalid value prop for GlobalStateProvider" );
+      if (!isArray(attributes.value) || attributes.value.length !== 2) {
+        throw new Error("Invalid value prop for GlobalStateProvider");
       }
       this.vm.globalStateContext = attributes.value;
     }
 
-    const children = code.children.map( ( child, i ) => {
+    const children = code.children.map((child, i) => {
       this.vm.gIndex = i;
-      return this.executeExpression( child );
-    } );
+      return this.executeExpression(child);
+    });
 
-    if ( customElement ) {
-      return customElement( { ...attributes, children } );
-    } else if ( customComponent ) {
-      return isStyledComponent( customComponent )
-        ? React.createElement( customComponent, { ...attributes }, ...children )
-        : customComponent( { children, ...attributes } );
-    } else if ( element === "Widget" ) {
-      return <Widget { ...attributes } />;
-    } else if ( element === "CommitButton" ) {
+    if (customElement) {
+      return customElement({ ...attributes, children });
+    } else if (customComponent) {
+      return isStyledComponent(customComponent)
+        ? React.createElement(customComponent, { ...attributes }, ...children)
+        : customComponent({ children, ...attributes });
+    } else if (element === "Widget") {
+      return <Widget {...attributes} />;
+    } else if (element === "CommitButton") {
       return (
-        <CommitButton { ...attributes } widgetSrc={ this.vm.widgetSrc }>
-          { children }
+        <CommitButton {...attributes} widgetSrc={this.vm.widgetSrc}>
+          {children}
         </CommitButton>
       );
     } else if (element === "InfiniteScroll") {
       return <InfiniteScroll {...attributes}>{children}</InfiniteScroll>;
     } else if (element === "VirtualizedChat") {
-      return <VirtualizedChat {...attributes}/>;
+      return <VirtualizedChat {...attributes} />;
     } else if (element === "Message") {
-      return <Message {...attributes}/>;
-    }
-    else if ( element === "Tooltip" ) {
-      return <Tooltip { ...attributes }>{ children }</Tooltip>;
-    } else if ( element === "OverlayTrigger" ) {
+      return <Message {...attributes} />;
+    } else if (element === "Tooltip") {
+      return <Tooltip {...attributes}>{children}</Tooltip>;
+    } else if (element === "OverlayTrigger") {
       return (
-        <OverlayTrigger { ...attributes }>
-          { children.filter( ( c ) => !isString( c ) || !!c.trim() )[ 0 ] }
+        <OverlayTrigger {...attributes}>
+          {children.filter((c) => !isString(c) || !!c.trim())[0]}
         </OverlayTrigger>
       );
-    } else if ( element === "Typeahead" ) {
-      return <Typeahead { ...attributes } />;
-    } else if ( element === "Markdown" ) {
-      return <Markdown { ...attributes } />;
-    } else if ( element === "MarkdownEditor" ) {
-      return <MarkdownEditor { ...attributes } />;
-    } else if ( element === "Fragment" ) {
-      return <React.Fragment { ...attributes }>{ children }</React.Fragment>;
-    } else if ( element === "IpfsImageUpload" ) {
+    } else if (element === "Typeahead") {
+      return <Typeahead {...attributes} />;
+    } else if (element === "Markdown") {
+      return <Markdown {...attributes} />;
+    } else if (element === "MarkdownEditor") {
+      return <MarkdownEditor {...attributes} />;
+    } else if (element === "Fragment") {
+      return <React.Fragment {...attributes}>{children}</React.Fragment>;
+    } else if (element === "IpfsImageUpload") {
       return (
-        <div className="d-inline-block" key={ attributes.key }>
-          { status.img?.cid && (
+        <div className="d-inline-block" key={attributes.key}>
+          {status.img?.cid && (
             <div
               className="d-inline-block me-2 overflow-hidden align-middle"
-              style={ { width: "2.5em", height: "2.5em" } }
+              style={{ width: "2.5em", height: "2.5em" }}
             >
               <img
                 className="rounded w-100 h-100"
-                style={ { objectFit: "cover" } }
-                src={ ipfsUrl( status.img?.cid ) }
+                style={{ objectFit: "cover" }}
+                src={ipfsUrl(status.img?.cid)}
                 alt="upload preview"
               />
             </div>
-          ) }
+          )}
           <Files
-            multiple={ false }
-            accepts={ [ "image/*" ] }
-            minFileSize={ 1 }
+            multiple={false}
+            accepts={["image/*"]}
+            minFileSize={1}
             clickable
-            { ...attributes }
+            {...attributes}
           >
-            { status.img?.uploading ? (
-              <>{ Loading } Uploading</>
+            {status.img?.uploading ? (
+              <>{Loading} Uploading</>
             ) : status.img?.cid ? (
               "Replace"
             ) : (
               "Upload an Image"
-            ) }
+            )}
           </Files>
         </div>
       );
-    } else if ( element === "Files" ) {
-      return <Files { ...attributes }>{ children }</Files>;
-    } else if ( element === "iframe" ) {
-      return <SecureIframe { ...attributes } />;
-    } else if ( element === "Web3Connect" ) {
-      return <Web3ConnectButton { ...attributes } />;
-    } else if ( RadixComp ) {
-      if ( element.includes( "Portal" ) ) {
+    } else if (element === "Files") {
+      return <Files {...attributes}>{children}</Files>;
+    } else if (element === "iframe") {
+      return <SecureIframe {...attributes} />;
+    } else if (element === "Web3Connect") {
+      return <Web3ConnectButton {...attributes} />;
+    } else if (RadixComp) {
+      if (element.includes("Portal")) {
         throw new Error(
-          `Radix's "${ element }" component is not allowed. This portal element is an optional Radix feature and isn't necessary for most use cases.`
+          `Radix's "${element}" component is not allowed. This portal element is an optional Radix feature and isn't necessary for most use cases.`
         );
       }
       let newChildren = children;
-      if ( Array.isArray( newChildren ) ) {
+      if (Array.isArray(newChildren)) {
         newChildren = newChildren.filter(
-          ( c ) => typeof c !== "string" || c.trim() !== ""
+          (c) => typeof c !== "string" || c.trim() !== ""
         );
-        if ( newChildren.length === 1 ) {
-          newChildren = newChildren[ 0 ];
-        } else if ( newChildren.length === 0 ) {
+        if (newChildren.length === 1) {
+          newChildren = newChildren[0];
+        } else if (newChildren.length === 0) {
           newChildren = undefined;
         }
       }
-      return <RadixComp { ...attributes }>{ newChildren }</RadixComp>;
-    } else if ( withChildren === true ) {
-      return React.createElement( element, { ...attributes }, ...children );
-    } else if ( withChildren === false ) {
-      return React.createElement( element, { ...attributes } );
+      return <RadixComp {...attributes}>{newChildren}</RadixComp>;
+    } else if (withChildren === true) {
+      return React.createElement(element, { ...attributes }, ...children);
+    } else if (withChildren === false) {
+      return React.createElement(element, { ...attributes });
     } else {
-      throw new Error( "Unsupported element: " + element );
+      throw new Error("Unsupported element: " + element);
     }
   }
 
-  resolveKey ( code, computed ) {
+  resolveKey(code, computed) {
     const key =
-      !computed && ( code.type === "Identifier" || code.type === "JSXIdentifier" )
+      !computed && (code.type === "Identifier" || code.type === "JSXIdentifier")
         ? code.name
-        : this.executeExpression( code );
-    assertNotReservedKey( key );
+        : this.executeExpression(code);
+    assertNotReservedKey(key);
     return key;
   }
 
-  callFunction ( keyword, callee, args, optional, isNew ) {
-    const keywordType = Keywords[ keyword ];
-    if ( keywordType === true || keywordType === undefined ) {
+  callFunction(keyword, callee, args, optional, isNew) {
+    const keywordType = Keywords[keyword];
+    if (keywordType === true || keywordType === undefined) {
       if (
-        ( keyword === "Social" && callee === "getr" ) ||
+        (keyword === "Social" && callee === "getr") ||
         callee === "socialGetr"
       ) {
-        if ( args.length < 1 ) {
-          throw new Error( "Missing argument 'keys' for Social.getr" );
+        if (args.length < 1) {
+          throw new Error("Missing argument 'keys' for Social.getr");
         }
         return this.vm.cachedSocialGet(
-          args[ 0 ],
+          args[0],
           true,
-          args[ 1 ],
-          args[ 2 ],
-          args[ 3 ]
+          args[1],
+          args[2],
+          args[3]
         );
       } else if (
-        ( keyword === "Social" && callee === "get" ) ||
+        (keyword === "Social" && callee === "get") ||
         callee === "socialGet"
       ) {
-        if ( args.length < 1 ) {
-          throw new Error( "Missing argument 'keys' for Social.get" );
+        if (args.length < 1) {
+          throw new Error("Missing argument 'keys' for Social.get");
         }
         return this.vm.cachedSocialGet(
-          args[ 0 ],
+          args[0],
           false,
-          args[ 1 ],
-          args[ 2 ],
-          args[ 3 ]
+          args[1],
+          args[2],
+          args[3]
         );
-      } else if ( keyword === "Social" && callee === "keys" ) {
-        if ( args.length < 1 ) {
-          throw new Error( "Missing argument 'keys' for Social.keys" );
+      } else if (keyword === "Social" && callee === "keys") {
+        if (args.length < 1) {
+          throw new Error("Missing argument 'keys' for Social.keys");
         }
-        return this.vm.cachedSocialKeys( ...args );
-      } else if ( keyword === "Social" && callee === "index" ) {
-        if ( args.length < 2 ) {
+        return this.vm.cachedSocialKeys(...args);
+      } else if (keyword === "Social" && callee === "index") {
+        if (args.length < 2) {
           throw new Error(
             "Missing argument 'action' and 'key` for Social.index"
           );
         }
-        return this.vm.cachedIndex( ...args );
-      } else if ( keyword === "Social" && callee === "set" ) {
-        if ( args.length < 1 ) {
-          throw new Error( "Missing argument 'data' for Social.set" );
+        return this.vm.cachedIndex(...args);
+      } else if (keyword === "Social" && callee === "set") {
+        if (args.length < 1) {
+          throw new Error("Missing argument 'data' for Social.set");
         }
-        return this.vm.socialSet( args[ 0 ], args[ 1 ] );
-      } else if ( keyword === "Near" && callee === "view" ) {
-        if ( args.length < 2 ) {
+        return this.vm.socialSet(args[0], args[1]);
+      } else if (keyword === "Near" && callee === "view") {
+        if (args.length < 2) {
           throw new Error(
             "Method: Near.view. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality', 'subscribe', 'cacheOptions'"
           );
@@ -869,11 +872,14 @@ class VmStack {
           methodName,
           viewArg,
           blockId,
-          maybeSubscribe( subscribe, blockId ),
+          maybeSubscribe(subscribe, blockId),
           cacheOptions
         );
-      } else if ( keyword === "Near" && callee === "calimeroView" || keyword === "Calimero" && callee === "view" ) {
-        if ( args.length < 2 ) {
+      } else if (
+        (keyword === "Near" && callee === "calimeroView") ||
+        (keyword === "Calimero" && callee === "view")
+      ) {
+        if (args.length < 2) {
           throw new Error(
             "Method: Calimero.view. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality', 'subscribe', 'cacheOptions'"
           );
@@ -892,68 +898,86 @@ class VmStack {
           methodName,
           viewArg,
           blockId,
-          maybeSubscribe( subscribe, blockId ),
+          maybeSubscribe(subscribe, blockId),
           cacheOptions
         );
-      } else if ( keyword === "Near" && callee === "asyncView" ) {
-        if ( args.length < 2 ) {
+      } else if (keyword === "Near" && callee === "asyncView") {
+        if (args.length < 2) {
           throw new Error(
             "Method: Near.asyncView. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality'"
           );
         }
-        return this.vm.asyncNearView( ...args );
-      } else if ( keyword === "Near" && callee === "asyncCalimeroView" || keyword === "Calimero" && callee === "asyncView" ) {
-        if ( args.length < 2 ) {
+        return this.vm.asyncNearView(...args);
+      } else if (
+        (keyword === "Near" && callee === "asyncCalimeroView") ||
+        (keyword === "Calimero" && callee === "asyncView")
+      ) {
+        if (args.length < 2) {
           throw new Error(
             "Method: Calimero.asyncView. Required arguments: 'contractName', 'methodName'. Optional: 'args', 'blockId/finality'"
           );
         }
-        return this.vm.asyncCalimeroView( ...args );
-      } else if ( keyword === "Near" && callee === "block" ) {
-        const [ blockId, subscribe, cacheOptions ] = args;
+        return this.vm.asyncCalimeroView(...args);
+      } else if (keyword === "Near" && callee === "block") {
+        const [blockId, subscribe, cacheOptions] = args;
         return this.vm.cachedNearBlock(
           blockId,
-          maybeSubscribe( subscribe, blockId ),
+          maybeSubscribe(subscribe, blockId),
           cacheOptions
         );
-      } else if ( keyword === "Near" && callee === "call" ) {
-        if ( args.length === 1 ) {
-          if ( isObject( args[ 0 ] ) ) {
-            return this.vm.confirmTransactions( [ args[ 0 ] ] );
-          } else if ( isArray( args[ 0 ] ) ) {
-            return this.vm.confirmTransactions( args[ 0 ] );
+      } else if (keyword === "Near" && callee === "call") {
+        if (args.length === 1) {
+          if (isObject(args[0])) {
+            return this.vm.confirmTransactions([args[0]]);
+          } else if (isArray(args[0])) {
+            return this.vm.confirmTransactions(args[0]);
           } else {
             throw new Error(
               "Method: Near.call. Required argument: 'tx/txs'. A single argument call requires an TX object or an array of TX objects."
             );
           }
         } else {
-          if ( args.length < 2 || args.length > 5 ) {
+          if (args.length < 2 || args.length > 5) {
             throw new Error(
               "Method: Near.call. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
             );
           }
 
-          return this.vm.confirmTransactions( [
+          return this.vm.confirmTransactions([
             {
-              contractName: args[ 0 ],
-              methodName: args[ 1 ],
-              args: args[ 2 ] ?? {},
-              gas: args[ 3 ],
-              deposit: args[ 4 ],
+              contractName: args[0],
+              methodName: args[1],
+              args: args[2] ?? {},
+              gas: args[3],
+              deposit: args[4],
             },
-          ] );
+          ]);
         }
-      } else if ( keyword === "Near" && callee === "requestFak" ) {
-        return this.vm.near.requestFak( this.vm.widgetSrc, ...args );
-      } else if ( keyword === "Near" && callee === "loginWithMNWallet" || keyword === "Calimero" && callee === "loginWithMNWallet" ) {
-        return this.vm.near.loginWithMNWallet( this.vm.near.calimeroConnection.config.networkId, ...args );
-      } else if ( keyword === "Near" && callee === "hasValidCalimeroFak" || keyword === "Calimero" && callee === "hasValidFak" ) {
-        return this.vm.near.verifyCalimeroFak( this.vm.near.calimeroConnection.config.networkId, ...args );
-      } else if ( keyword === "Near" && callee === "hasValidFak" ) {
-        return this.vm.near.verifyFak( this.vm.widgetSrc, ...args );
-      } else if ( keyword === "Near" && callee === "fakCalimeroCall" || keyword === "Calimero" && callee === "fakCall" ) {
-        if ( args.length < 2 || args.length > 5 ) {
+      } else if (keyword === "Near" && callee === "requestFak") {
+        return this.vm.near.requestFak(this.vm.widgetSrc, ...args);
+      } else if (
+        (keyword === "Near" && callee === "loginWithMNWallet") ||
+        (keyword === "Calimero" && callee === "loginWithMNWallet")
+      ) {
+        return this.vm.near.loginWithMNWallet(
+          this.vm.near.calimeroConnection.config.networkId,
+          ...args
+        );
+      } else if (
+        (keyword === "Near" && callee === "hasValidCalimeroFak") ||
+        (keyword === "Calimero" && callee === "hasValidFak")
+      ) {
+        return this.vm.near.verifyCalimeroFak(
+          this.vm.near.calimeroConnection.config.networkId,
+          ...args
+        );
+      } else if (keyword === "Near" && callee === "hasValidFak") {
+        return this.vm.near.verifyFak(this.vm.widgetSrc, ...args);
+      } else if (
+        (keyword === "Near" && callee === "fakCalimeroCall") ||
+        (keyword === "Calimero" && callee === "fakCall")
+      ) {
+        if (args.length < 2 || args.length > 5) {
           throw new Error(
             "Method: Calimero.fakCall. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
           );
@@ -961,149 +985,149 @@ class VmStack {
 
         return this.vm.near.submitCalimeroFakTransaction(
           this.vm.near.calimeroConnection.config.networkId,
-          args[ 0 ],
-          args[ 1 ],
-          args[ 2 ] ?? {},
-          args[ 3 ],
-          args[ 4 ],
-          args[ 5 ]
+          args[0],
+          args[1],
+          args[2] ?? {},
+          args[3],
+          args[4],
+          args[5]
         );
-      } else if ( keyword === "Near" && callee === "fakCall" ) {
-        if ( args.length < 2 || args.length > 5 ) {
+      } else if (keyword === "Near" && callee === "fakCall") {
+        if (args.length < 2 || args.length > 5) {
           throw new Error(
             "Method: Near.fakCall. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
           );
         }
         return this.vm.near.submitFakTransaction(
           this.vm.widgetSrc,
-          args[ 0 ],
-          args[ 1 ],
-          args[ 2 ] ?? {},
-          args[ 3 ],
-          args[ 4 ],
-          args[ 5 ]
+          args[0],
+          args[1],
+          args[2] ?? {},
+          args[3],
+          args[4],
+          args[5]
         );
-      } else if ( keyword === "Calimero" && callee === "fakSignTx" ) {
-        if ( args.length < 2 || args.length > 5 ) {
+      } else if (keyword === "Calimero" && callee === "fakSignTx") {
+        if (args.length < 2 || args.length > 5) {
           throw new Error(
             "Method: Calimero.fakSignTx. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
           );
         }
         return this.vm.near.signCalimeroFakTransaction(
           this.vm.near.calimeroConnection.config.networkId,
-          args[ 0 ],
-          args[ 1 ],
-          args[ 2 ] ?? {},
-          args[ 3 ],
-          args[ 4 ],
-          args[ 5 ]
+          args[0],
+          args[1],
+          args[2] ?? {},
+          args[3],
+          args[4],
+          args[5]
         );
-      } else if ( keyword === "Calimero" && callee === "sign" ) {
-        if ( args.length !== 2 ) {
+      } else if (keyword === "Calimero" && callee === "sign") {
+        if (args.length !== 2) {
           throw new Error(
             "Method: Calimero.sign. Required arguments: 'contractName' -> contract that will verify signature. 'message' -> message to be signed."
           );
         }
         return this.vm.near.signWithCalimeroFak(
           this.vm.near.calimeroConnection.config.networkId,
-          args[ 0 ],
-          args[ 1 ],
+          args[0],
+          args[1]
         );
       } else if (
-        ( keyword === "JSON" && callee === "stringify" ) ||
+        (keyword === "JSON" && callee === "stringify") ||
         callee === "stringify"
       ) {
-        if ( args.length < 1 ) {
-          throw new Error( "Missing argument 'obj' for JSON.stringify" );
+        if (args.length < 1) {
+          throw new Error("Missing argument 'obj' for JSON.stringify");
         }
-        assertNotReactObject( args[ 0 ] );
-        return JSON.stringify( args[ 0 ], args[ 1 ], args[ 2 ] );
-      } else if ( keyword === "JSON" && callee === "parse" ) {
-        if ( args.length < 1 ) {
-          throw new Error( "Missing argument 's' for JSON.parse" );
+        assertNotReactObject(args[0]);
+        return JSON.stringify(args[0], args[1], args[2]);
+      } else if (keyword === "JSON" && callee === "parse") {
+        if (args.length < 1) {
+          throw new Error("Missing argument 's' for JSON.parse");
         }
         try {
-          const obj = JSON.parse( args[ 0 ] );
-          assertValidObject( obj );
+          const obj = JSON.parse(args[0]);
+          assertValidObject(obj);
           return obj;
-        } catch ( e ) {
+        } catch (e) {
           return null;
         }
-      } else if ( keyword === "Object" ) {
-        if ( callee === "keys" ) {
-          if ( args.length < 1 ) {
-            throw new Error( "Missing argument 'obj' for Object.keys" );
+      } else if (keyword === "Object") {
+        if (callee === "keys") {
+          if (args.length < 1) {
+            throw new Error("Missing argument 'obj' for Object.keys");
           }
-          assertNotReactObject( args[ 0 ] );
-          return Object.keys( args[ 0 ] );
-        } else if ( callee === "values" ) {
-          if ( args.length < 1 ) {
-            throw new Error( "Missing argument 'obj' for Object.values" );
+          assertNotReactObject(args[0]);
+          return Object.keys(args[0]);
+        } else if (callee === "values") {
+          if (args.length < 1) {
+            throw new Error("Missing argument 'obj' for Object.values");
           }
-          assertNotReactObject( args[ 0 ] );
-          return Object.values( args[ 0 ] );
-        } else if ( callee === "entries" ) {
-          if ( args.length < 1 ) {
-            throw new Error( "Missing argument 'obj' for Object.entries" );
+          assertNotReactObject(args[0]);
+          return Object.values(args[0]);
+        } else if (callee === "entries") {
+          if (args.length < 1) {
+            throw new Error("Missing argument 'obj' for Object.entries");
           }
-          assertNotReactObject( args[ 0 ] );
-          return Object.entries( args[ 0 ] );
-        } else if ( callee === "assign" ) {
-          args.forEach( ( arg ) => assertNotReactObject( arg ) );
-          const obj = Object.assign( ...args );
-          assertValidObject( obj );
+          assertNotReactObject(args[0]);
+          return Object.entries(args[0]);
+        } else if (callee === "assign") {
+          args.forEach((arg) => assertNotReactObject(arg));
+          const obj = Object.assign(...args);
+          assertValidObject(obj);
           return obj;
-        } else if ( callee === "fromEntries" ) {
-          const obj = Object.fromEntries( args[ 0 ] );
-          assertValidObject( obj );
+        } else if (callee === "fromEntries") {
+          const obj = Object.fromEntries(args[0]);
+          assertValidObject(obj);
           return obj;
         }
-      } else if ( keyword === "Crypto" && callee === "randomBytes" ) {
-        if ( args.length < 1 ) {
-          throw new Error( "Missing argument 'n' for Crypto.randomBytes" );
+      } else if (keyword === "Crypto" && callee === "randomBytes") {
+        if (args.length < 1) {
+          throw new Error("Missing argument 'n' for Crypto.randomBytes");
         }
-        return randomBytes( args[ 0 ] );
-      } else if ( keyword === "Crypto" && callee === "createCipheriv" ) {
-        return createCipheriv( ...args );
-      } else if ( keyword === "Crypto" && callee === "createDecipheriv" ) {
-        return createDecipheriv( ...args );
+        return randomBytes(args[0]);
+      } else if (keyword === "Crypto" && callee === "createCipheriv") {
+        return createCipheriv(...args);
+      } else if (keyword === "Crypto" && callee === "createDecipheriv") {
+        return createDecipheriv(...args);
       } else if (
-        ( keyword === "State" && callee === "init" ) ||
+        (keyword === "State" && callee === "init") ||
         callee === "initState"
       ) {
-        if ( args.length < 1 ) {
-          throw new Error( "Missing argument 'initialState' for State.init" );
+        if (args.length < 1) {
+          throw new Error("Missing argument 'initialState' for State.init");
         }
         if (
-          args[ 0 ] === null ||
-          typeof args[ 0 ] !== "object" ||
-          isReactObject( args[ 0 ] )
+          args[0] === null ||
+          typeof args[0] !== "object" ||
+          isReactObject(args[0])
         ) {
-          throw new Error( "'initialState' is not an object" );
+          throw new Error("'initialState' is not an object");
         }
-        if ( this.vm.state.state === undefined ) {
-          const newState = args[ 0 ];
+        if (this.vm.state.state === undefined) {
+          const newState = args[0];
           this.vm.state.state = newState;
-          this.vm.setReactState( newState );
+          this.vm.setReactState(newState);
         }
         return this.vm.state.state;
-      } else if ( keyword === "State" && callee === "update" ) {
-        if ( isObject( args[ 0 ] ) ) {
+      } else if (keyword === "State" && callee === "update") {
+        if (isObject(args[0])) {
           this.vm.state.state = this.vm.state.state ?? {};
-          Object.assign( this.vm.state.state, args[ 0 ] );
-        } else if ( args[ 0 ] instanceof Function ) {
+          Object.assign(this.vm.state.state, args[0]);
+        } else if (args[0] instanceof Function) {
           this.vm.state.state = this.vm.state.state ?? {};
-          this.vm.state.state = args[ 0 ]( this.vm.state.state );
+          this.vm.state.state = args[0](this.vm.state.state);
         }
-        if ( this.vm.state.state === undefined ) {
-          throw new Error( "The state was not initialized" );
+        if (this.vm.state.state === undefined) {
+          throw new Error("The state was not initialized");
         }
-        this.vm.setReactState( this.vm.state.state );
+        this.vm.setReactState(this.vm.state.state);
         return this.vm.state.state;
-      } else if ( keyword === "State" && callee === "get" ) {
+      } else if (keyword === "State" && callee === "get") {
         return this.vm.state.state;
-      } else if ( keyword === "Storage" && callee === "privateSet" ) {
-        if ( args.length < 2 ) {
+      } else if (keyword === "Storage" && callee === "privateSet") {
+        if (args.length < 2) {
           throw new Error(
             "Missing argument 'key' or 'value' for Storage.privateSet"
           );
@@ -1113,309 +1137,308 @@ class VmStack {
             src: this.vm.widgetSrc,
             type: StorageType.Private,
           },
-          args[ 0 ],
-          args[ 1 ]
+          args[0],
+          args[1]
         );
-      } else if ( keyword === "Storage" && callee === "privateGet" ) {
-        if ( args.length < 1 ) {
-          throw new Error( "Missing argument 'key' for Storage.privateGet" );
+      } else if (keyword === "Storage" && callee === "privateGet") {
+        if (args.length < 1) {
+          throw new Error("Missing argument 'key' for Storage.privateGet");
         }
         return this.vm.storageGet(
           {
             src: this.vm.widgetSrc,
             type: StorageType.Private,
           },
-          args[ 0 ]
+          args[0]
         );
-      } else if ( keyword === "Storage" && callee === "set" ) {
-        if ( args.length < 2 ) {
-          throw new Error( "Missing argument 'key' or 'value' for Storage.set" );
+      } else if (keyword === "Storage" && callee === "set") {
+        if (args.length < 2) {
+          throw new Error("Missing argument 'key' or 'value' for Storage.set");
         }
         return this.vm.storageSet(
           {
             src: this.vm.widgetSrc,
             type: StorageType.Public,
           },
-          args[ 0 ],
-          args[ 1 ]
+          args[0],
+          args[1]
         );
-      } else if ( keyword === "Storage" && callee === "get" ) {
-        if ( args.length < 1 ) {
-          throw new Error( "Missing argument 'key' for Storage.get" );
+      } else if (keyword === "Storage" && callee === "get") {
+        if (args.length < 1) {
+          throw new Error("Missing argument 'key' for Storage.get");
         }
         return this.vm.storageGet(
           {
-            src: args[ 1 ] ?? this.vm.widgetSrc,
+            src: args[1] ?? this.vm.widgetSrc,
             type: StorageType.Public,
           },
-          args[ 0 ]
+          args[0]
         );
-      } else if ( keyword === "console" && callee === "log" ) {
-        return console.log( this.vm.widgetSrc, ...args );
-      } else if ( keyword === "clipboard" && callee === "writeText" ) {
+      } else if (keyword === "console" && callee === "log") {
+        return console.log(this.vm.widgetSrc, ...args);
+      } else if (keyword === "clipboard" && callee === "writeText") {
         return this.isTrusted
-          ? navigator.clipboard.writeText( ...args )
-          : Promise.reject( new Error( "Not trusted (not a click)" ) );
-      } else if ( keyword === "VM" && callee === "require" ) {
-        return this.vm.vmRequire( ...args );
-      } else if ( keyword === "Ethers" ) {
-        if ( callee === "provider" ) {
+          ? navigator.clipboard.writeText(...args)
+          : Promise.reject(new Error("Not trusted (not a click)"));
+      } else if (keyword === "VM" && callee === "require") {
+        return this.vm.vmRequire(...args);
+      } else if (keyword === "Ethers") {
+        if (callee === "provider") {
           return this.vm.ethersProvider;
-        } else if ( callee === "setChain" ) {
+        } else if (callee === "setChain") {
           const f = this.vm.ethersProviderContext?.setChain;
-          if ( !f ) {
-            throw new Error( "The gateway doesn't support `setChain` operation" );
+          if (!f) {
+            throw new Error("The gateway doesn't support `setChain` operation");
           }
-          return f( ...args );
+          return f(...args);
         }
-        return this.vm.cachedEthersCall( callee, args );
-      } else if ( callee === "useGlobalState" ) {
-        if ( args.length < 1 || !isString( args[ 0 ] ) ) {
-          throw new Error( "Method: useGlobalState. Requires string argument" );
+        return this.vm.cachedEthersCall(callee, args);
+      } else if (callee === "useGlobalState") {
+        if (args.length < 1 || !isString(args[0])) {
+          throw new Error("Method: useGlobalState. Requires string argument");
         }
-        const [ globalState, setGlobalState ] = this.vm.globalStateContext;
+        const [globalState, setGlobalState] = this.vm.globalStateContext;
         return [
-          globalState[ args[ 0 ] ],
-          ( value ) => setGlobalState( {
-            ...globalState,
-            [ args[ 0 ] ]: value,
-          } )
+          globalState[args[0]],
+          (value) =>
+            setGlobalState({
+              ...globalState,
+              [args[0]]: value,
+            }),
         ];
-      } else if ( keyword === "WebSocket" ) {
-        if ( callee === "WebSocket" ) {
-          const websocket = new WebSocket( ...args );
-          this.vm.websockets.push( websocket );
+      } else if (keyword === "WebSocket") {
+        if (callee === "WebSocket") {
+          const websocket = new WebSocket(...args);
+          this.vm.websockets.push(websocket);
           return websocket;
         } else {
-          throw new Error( "Unsupported WebSocket method" );
+          throw new Error("Unsupported WebSocket method");
         }
-      } else if ( keywordType === undefined ) {
-        if ( NativeFunctions.hasOwnProperty( callee ) ) {
-          return NativeFunctions[ callee ]( ...args );
-        } else if ( callee === "fetch" ) {
-          if ( args.length < 1 ) {
+      } else if (keywordType === undefined) {
+        if (NativeFunctions.hasOwnProperty(callee)) {
+          return NativeFunctions[callee](...args);
+        } else if (callee === "fetch") {
+          if (args.length < 1) {
             throw new Error(
               "Method: fetch. Required arguments: 'url'. Optional: 'options'"
             );
           }
-          return this.vm.cachedFetch( ...args );
-        } else if ( callee === "asyncFetch" ) {
-          if ( args.length < 1 ) {
+          return this.vm.cachedFetch(...args);
+        } else if (callee === "asyncFetch") {
+          if (args.length < 1) {
             throw new Error(
               "Method: asyncFetch. Required arguments: 'url'. Optional: 'options'"
             );
           }
-          return this.vm.asyncFetch( ...args );
-        } else if ( callee === "useCache" ) {
-          if ( args.length < 2 ) {
+          return this.vm.asyncFetch(...args);
+        } else if (callee === "useCache") {
+          if (args.length < 2) {
             throw new Error(
               "Method: useCache. Required arguments: 'promiseGenerator', 'dataKey'. Optional: 'options'"
             );
           }
-          if ( !isFunction( args[ 0 ] ) ) {
+          if (!isFunction(args[0])) {
             throw new Error(
               "Method: useCache. The first argument 'promiseGenerator' must be a function"
             );
           }
-          return this.vm.useCache( ...args );
-        } else if ( callee === "useState" ) {
-          if ( this.prevStack ) {
+          return this.vm.useCache(...args);
+        } else if (callee === "useState") {
+          if (this.prevStack) {
             throw new Error(
               "Method: useState. The hook can an only be called from the top of the stack"
             );
           }
-          if ( !this.vm.hooks ) {
-            throw new Error( "Hooks are unavailable for modules" );
+          if (!this.vm.hooks) {
+            throw new Error("Hooks are unavailable for modules");
           }
-          if ( args.length < 1 ) {
+          if (args.length < 1) {
             throw new Error(
               "Method: useState. Required arguments: 'initialState'"
             );
           }
-          const initialState = args[ 0 ];
+          const initialState = args[0];
           const hookIndex = this.hookIndex++;
-          const hook = this.vm.hooks[ hookIndex ];
-          if ( hook ) {
-            return [ hook.state, hook.setState ];
+          const hook = this.vm.hooks[hookIndex];
+          if (hook) {
+            return [hook.state, hook.setState];
           }
 
-          const getState = () => this.vm.hooks[ hookIndex ]?.state;
+          const getState = () => this.vm.hooks[hookIndex]?.state;
 
-          const setState = ( newState ) => {
-            if ( isFunction( newState ) ) {
-              newState = newState( getState() );
+          const setState = (newState) => {
+            if (isFunction(newState)) {
+              newState = newState(getState());
             }
-            this.vm.setReactHook( hookIndex, { state: newState, setState } );
+            this.vm.setReactHook(hookIndex, { state: newState, setState });
             return newState;
           };
 
-          return [ setState( initialState ), setState ];
-        } else if ( callee === "useEffect" ) {
-          if ( this.prevStack ) {
+          return [setState(initialState), setState];
+        } else if (callee === "useEffect") {
+          if (this.prevStack) {
             throw new Error(
               "Method: useEffect. The hook can an only be called from the top of the stack"
             );
           }
-          if ( !this.vm.hooks ) {
-            throw new Error( "Hooks are unavailable for modules" );
+          if (!this.vm.hooks) {
+            throw new Error("Hooks are unavailable for modules");
           }
-          if ( args.length < 1 ) {
+          if (args.length < 1) {
             throw new Error(
               "Method: useEffect. Required arguments: 'setup'. Optional: 'dependencies'"
             );
           }
-          const setup = args[ 0 ];
-          if ( !isFunction( setup ) ) {
+          const setup = args[0];
+          if (!isFunction(setup)) {
             throw new Error(
               "Method: useEffect. The first argument 'setup' must be a function"
             );
           }
           const hookIndex = this.hookIndex++;
-          const dependencies = args[ 1 ];
-          const hook = this.vm.hooks[ hookIndex ];
-          if ( hook ) {
+          const dependencies = args[1];
+          const hook = this.vm.hooks[hookIndex];
+          if (hook) {
             const oldDependencies = hook.dependencies;
             if (
               oldDependencies !== undefined &&
-              deepEqual( oldDependencies, dependencies )
+              deepEqual(oldDependencies, dependencies)
             ) {
               return undefined;
             }
           }
           const cleanup = hook?.cleanup;
-          if ( isFunction( cleanup ) ) {
+          if (isFunction(cleanup)) {
             cleanup();
           }
-          this.vm.setReactHook( hookIndex, {
+          this.vm.setReactHook(hookIndex, {
             cleanup: setup(),
             dependencies,
-          } );
+          });
 
           return undefined;
-        } else if ( callee === "useMemo" || callee === "useCallback" ) {
-          if ( this.prevStack ) {
+        } else if (callee === "useMemo" || callee === "useCallback") {
+          if (this.prevStack) {
             throw new Error(
-              `Method: ${ callee }. The hook can only be called from the top of the stack`
+              `Method: ${callee}. The hook can only be called from the top of the stack`
             );
           }
 
           const isMemo = callee === "useMemo";
-          const fnArgName = isMemo ? 'factory' : 'callback';
-          if ( args.length < 1 ) {
+          const fnArgName = isMemo ? "factory" : "callback";
+          if (args.length < 1) {
             throw new Error(
-              `Method: ${ callee }. Required arguments: '${ fnArgName }'. Optional: 'dependencies'`
+              `Method: ${callee}. Required arguments: '${fnArgName}'. Optional: 'dependencies'`
             );
           }
 
-          const fn = args[ 0 ];
-          if ( !( fn instanceof Function ) ) {
+          const fn = args[0];
+          if (!(fn instanceof Function)) {
             throw new Error(
-              `Method: ${ callee }. The first argument '${ fnArgName }' must be a function`
+              `Method: ${callee}. The first argument '${fnArgName}' must be a function`
             );
           }
 
           const hookIndex = this.hookIndex++;
-          const dependencies = args[ 1 ];
-          const hook = this.vm.hooks[ hookIndex ];
+          const dependencies = args[1];
+          const hook = this.vm.hooks[hookIndex];
 
-          if ( hook ) {
+          if (hook) {
             const oldDependencies = hook.dependencies;
             if (
               oldDependencies !== undefined &&
-              deepEqual( oldDependencies, dependencies )
+              deepEqual(oldDependencies, dependencies)
             ) {
               return hook.memoized;
             }
           }
 
           const memoized = isMemo ? fn() : fn;
-          this.vm.setReactHook( hookIndex, {
+          this.vm.setReactHook(hookIndex, {
             memoized,
             dependencies,
-          } );
+          });
           return memoized;
-        } else if ( callee === "useRef" ) {
-          if ( this.prevStack ) {
+        } else if (callee === "useRef") {
+          if (this.prevStack) {
             throw new Error(
-              'useRef hook error: Hooks should only be called from the top level, not inside loops, conditions, or nested functions.'
+              "useRef hook error: Hooks should only be called from the top level, not inside loops, conditions, or nested functions."
             );
           }
           const hookIndex = this.hookIndex++;
-          if ( !this.vm.hooks[ hookIndex ] ) {
-            const initialValue = args.length > 0 ? args[ 0 ] : null;
+          if (!this.vm.hooks[hookIndex]) {
+            const initialValue = args.length > 0 ? args[0] : null;
             const newRef = { current: initialValue };
-            this.vm.setReactHook( hookIndex, { ref: newRef } );
+            this.vm.setReactHook(hookIndex, { ref: newRef });
             return newRef;
           }
-          return this.vm.hooks[ hookIndex ].ref;
-        } else if ( callee === "setTimeout" ) {
-          const [ callback, timeout ] = args;
-          const timer = setTimeout( () => {
-            if ( !this.vm.alive ) {
+          return this.vm.hooks[hookIndex].ref;
+        } else if (callee === "setTimeout") {
+          const [callback, timeout] = args;
+          const timer = setTimeout(() => {
+            if (!this.vm.alive) {
               return;
             }
             callback();
-          }, timeout );
-          this.vm.timeouts.add( timer );
+          }, timeout);
+          this.vm.timeouts.add(timer);
           return timer;
-        } else if ( callee === "createMessageRenderer" ) {
-          const params = args[ 0 ];
-          if ( typeof params.accountId !== 'string' ) {
-            throw new Error( 'Invalid accountId. It should be a string.' );
+        } else if (callee === "createMessageRenderer") {
+          const params = args[0];
+          if (typeof params.accountId !== "string") {
+            throw new Error("Invalid accountId. It should be a string.");
           }
 
-          if ( typeof params.isThread !== 'boolean' ) {
-            throw new Error( 'Invalid isThread. It should be a boolean.' );
+          if (typeof params.isThread !== "boolean") {
+            throw new Error("Invalid isThread. It should be a boolean.");
           }
 
-          if ( typeof params.addMessageReaction !== 'function' ) {
-            throw new Error( 'Invalid addMessageReaction. It should be a function.' );
-          }
-
-          if ( params.setThread && typeof params.setThread !== 'function' ) {
-            throw new Error( 'Invalid setThread. If provided, it should be a function.' );
-          }
-          return messageRenderer( params );
-        } else if ( callee === "setInterval" ) {
-          if ( this.vm.intervals.size >= MAX_INTERVALS ) {
+          if (params.setThread && typeof params.setThread !== "function") {
             throw new Error(
-              `Too many intervals. Max allowed: ${ MAX_INTERVALS }`
+              "Invalid setThread. If provided, it should be a function."
             );
           }
-          const [ callback, timeout ] = args;
-          const timer = setInterval( () => {
-            if ( !this.vm.alive ) {
+          return messageRenderer(params);
+        } else if (callee === "setInterval") {
+          if (this.vm.intervals.size >= MAX_INTERVALS) {
+            throw new Error(
+              `Too many intervals. Max allowed: ${MAX_INTERVALS}`
+            );
+          }
+          const [callback, timeout] = args;
+          const timer = setInterval(() => {
+            if (!this.vm.alive) {
               return;
             }
             callback();
-          }, timeout );
-          this.vm.intervals.add( timer );
+          }, timeout);
+          this.vm.intervals.add(timer);
           return timer;
-        } else if ( callee === "clearTimeout" ) {
-          const timer = args[ 0 ];
-          this.vm.timeouts.delete( timer );
-          return clearTimeout( timer );
-        } else if ( callee === "clearInterval" ) {
-          const timer = args[ 0 ];
-          this.vm.intervals.delete( timer );
-          return clearInterval( timer );
+        } else if (callee === "clearTimeout") {
+          const timer = args[0];
+          this.vm.timeouts.delete(timer);
+          return clearTimeout(timer);
+        } else if (callee === "clearInterval") {
+          const timer = args[0];
+          this.vm.intervals.delete(timer);
+          return clearInterval(timer);
         }
       }
     } else {
-      const f = callee === keyword ? keywordType : keywordType[ callee ];
-      if ( typeof f === "function" ) {
-        return isNew ? new f( ...args ) : f( ...args );
+      const f = callee === keyword ? keywordType : keywordType[callee];
+      if (typeof f === "function") {
+        return isNew ? new f(...args) : f(...args);
       }
     }
 
-    if ( optional ) {
+    if (optional) {
       return undefined;
     }
 
     throw new Error(
       keyword && keyword !== callee
-        ? `Unsupported callee method '${ keyword }.${ callee }'`
-        : `Unsupported callee method '${ callee }'`
+        ? `Unsupported callee method '${keyword}.${callee}'`
+        : `Unsupported callee method '${callee}'`
     );
   }
 
@@ -1423,26 +1446,26 @@ class VmStack {
   /// Should only be used by left hand expressions for assignments.
   /// Options:
   /// - requireState requires the top object key be `state`
-  resolveMemberExpression ( code, options ) {
-    if ( code.type === "Identifier" || code.type === "JSXIdentifier" ) {
+  resolveMemberExpression(code, options) {
+    if (code.type === "Identifier" || code.type === "JSXIdentifier") {
       const key = code.name;
-      assertNotReservedKey( key );
-      if ( options?.requireState && key !== StakeKey ) {
-        throw new Error( `The top object should be ${ StakeKey }` );
+      assertNotReservedKey(key);
+      if (options?.requireState && key !== StakeKey) {
+        throw new Error(`The top object should be ${StakeKey}`);
       }
-      const obj = this.stack.findObj( key ) ?? this.stack.state;
-      assertNotReactObject( obj );
-      if ( obj === this.stack.state ) {
-        if ( key in Keywords ) {
-          if ( options?.left ) {
-            throw new Error( "Cannot assign to keyword '" + key + "'" );
+      const obj = this.stack.findObj(key) ?? this.stack.state;
+      assertNotReactObject(obj);
+      if (obj === this.stack.state) {
+        if (key in Keywords) {
+          if (options?.left) {
+            throw new Error("Cannot assign to keyword '" + key + "'");
           }
           return { obj, key, keyword: key };
         }
       }
-      if ( options?.left ) {
-        if ( !obj || !( key in obj ) ) {
-          throw new Error( `Accessing undeclared identifier '${ code.name }'` );
+      if (options?.left) {
+        if (!obj || !(key in obj)) {
+          throw new Error(`Accessing undeclared identifier '${code.name}'`);
         }
       }
       return { obj, key };
@@ -1455,101 +1478,101 @@ class VmStack {
         code.object?.type === "JSXIdentifier"
       ) {
         const keyword = code.object.name;
-        if ( keyword in Keywords ) {
-          if ( !options?.callee ) {
+        if (keyword in Keywords) {
+          if (!options?.callee) {
             throw new Error(
               "Cannot dereference keyword '" +
-              keyword +
-              "' in non-call expression"
+                keyword +
+                "' in non-call expression"
             );
           }
           return {
             obj: this.stack.state,
-            key: this.resolveKey( code.property, code.computed ),
+            key: this.resolveKey(code.property, code.computed),
             keyword,
           };
         }
       }
-      const obj = this.executeExpression( code.object );
-      assertNotReactObject( obj );
-      const key = this.resolveKey( code.property, code.computed );
+      const obj = this.executeExpression(code.object);
+      assertNotReactObject(obj);
+      const key = this.resolveKey(code.property, code.computed);
       return { obj, key };
     } else {
-      throw new Error( "Unsupported member type: '" + code.type + "'" );
+      throw new Error("Unsupported member type: '" + code.type + "'");
     }
   }
 
-  getArray ( elements ) {
+  getArray(elements) {
     const result = [];
-    elements.forEach( ( element ) => {
-      if ( element.type === "SpreadElement" ) {
-        result.push( ...this.executeExpression( element.argument ) );
+    elements.forEach((element) => {
+      if (element.type === "SpreadElement") {
+        result.push(...this.executeExpression(element.argument));
       } else {
-        result.push( this.executeExpression( element ) );
+        result.push(this.executeExpression(element));
       }
-    } );
+    });
     return result;
   }
 
-  executeExpressionInternal ( code ) {
-    if ( !code ) {
+  executeExpressionInternal(code) {
+    if (!code) {
       return null;
     }
     const type = code?.type;
-    if ( type === "AssignmentExpression" ) {
-      const { obj, key } = this.resolveMemberExpression( code.left, {
+    if (type === "AssignmentExpression") {
+      const { obj, key } = this.resolveMemberExpression(code.left, {
         left: true,
-      } );
-      const right = this.executeExpression( code.right );
+      });
+      const right = this.executeExpression(code.right);
 
-      if ( code.operator === "=" ) {
-        return ( obj[ key ] = right );
-      } else if ( code.operator === "+=" ) {
-        return ( obj[ key ] += right );
-      } else if ( code.operator === "-=" ) {
-        return ( obj[ key ] -= right );
-      } else if ( code.operator === "*=" ) {
-        return ( obj[ key ] *= right );
-      } else if ( code.operator === "/=" ) {
-        return ( obj[ key ] /= right );
-      } else if ( code.operator === "??=" ) {
-        return ( obj[ key ] ??= right );
+      if (code.operator === "=") {
+        return (obj[key] = right);
+      } else if (code.operator === "+=") {
+        return (obj[key] += right);
+      } else if (code.operator === "-=") {
+        return (obj[key] -= right);
+      } else if (code.operator === "*=") {
+        return (obj[key] *= right);
+      } else if (code.operator === "/=") {
+        return (obj[key] /= right);
+      } else if (code.operator === "??=") {
+        return (obj[key] ??= right);
       } else {
         throw new Error(
           "Unknown AssignmentExpression operator '" + code.operator + "'"
         );
       }
-    } else if ( type === "ChainExpression" ) {
-      return this.executeExpression( code.expression );
-    } else if ( type === "MemberExpression" || type === "JSXMemberExpression" ) {
-      const { obj, key } = this.resolveMemberExpression( code );
-      return obj?.[ key ];
-    } else if ( type === "Identifier" || type === "JSXIdentifier" ) {
-      return this.stack.get( code.name );
-    } else if ( type === "JSXExpressionContainer" ) {
-      return this.executeExpression( code.expression );
-    } else if ( type === "TemplateLiteral" ) {
+    } else if (type === "ChainExpression") {
+      return this.executeExpression(code.expression);
+    } else if (type === "MemberExpression" || type === "JSXMemberExpression") {
+      const { obj, key } = this.resolveMemberExpression(code);
+      return obj?.[key];
+    } else if (type === "Identifier" || type === "JSXIdentifier") {
+      return this.stack.get(code.name);
+    } else if (type === "JSXExpressionContainer") {
+      return this.executeExpression(code.expression);
+    } else if (type === "TemplateLiteral") {
       const quasis = [];
-      for ( let i = 0; i < code.quasis.length; i++ ) {
-        const element = code.quasis[ i ];
-        if ( element.type !== "TemplateElement" ) {
-          throw new Error( "Unknown quasis type: " + element.type );
+      for (let i = 0; i < code.quasis.length; i++) {
+        const element = code.quasis[i];
+        if (element.type !== "TemplateElement") {
+          throw new Error("Unknown quasis type: " + element.type);
         }
-        quasis.push( element.value.cooked );
-        if ( !element.tail ) {
-          quasis.push( this.executeExpression( code.expressions[ i ] ) );
+        quasis.push(element.value.cooked);
+        if (!element.tail) {
+          quasis.push(this.executeExpression(code.expressions[i]));
         }
       }
-      return quasis.join( "" );
-    } else if ( type === "CallExpression" || type === "NewExpression" ) {
+      return quasis.join("");
+    } else if (type === "CallExpression" || type === "NewExpression") {
       const isNew = type === "NewExpression";
-      const { obj, key, keyword } = this.resolveMemberExpression( code.callee, {
+      const { obj, key, keyword } = this.resolveMemberExpression(code.callee, {
         callee: true,
-      } );
-      const args = this.getArray( code.arguments );
-      if ( !keyword && obj?.[ key ] instanceof Function ) {
-        return isNew ? new obj[ key ]( ...args ) : obj[ key ]( ...args );
-      } else if ( keyword || obj === this.stack.state || obj === this.vm.state ) {
+      });
+      const args = this.getArray(code.arguments);
+      if (!keyword && obj?.[key] instanceof Function) {
+        return isNew ? new obj[key](...args) : obj[key](...args);
+      } else if (keyword || obj === this.stack.state || obj === this.vm.state) {
         return this.callFunction(
           keyword ?? "",
           key,
@@ -1558,124 +1581,124 @@ class VmStack {
           isNew
         );
       } else {
-        if ( code.optional ) {
+        if (code.optional) {
           return undefined;
         }
-        throw new Error( "Not a function call expression" );
+        throw new Error("Not a function call expression");
       }
-    } else if ( type === "Literal" || type === "JSXText" ) {
+    } else if (type === "Literal" || type === "JSXText") {
       return code.value;
-    } else if ( type === "JSXElement" || type === "JSXFragment" ) {
-      return this.renderElement( code );
-    } else if ( type === "JSXExpressionContainer" ) {
-      return this.executeExpression( code.expression );
-    } else if ( type === "BinaryExpression" ) {
-      const left = this.executeExpression( code.left );
-      const right = this.executeExpression( code.right );
-      if ( code.operator === "+" ) {
+    } else if (type === "JSXElement" || type === "JSXFragment") {
+      return this.renderElement(code);
+    } else if (type === "JSXExpressionContainer") {
+      return this.executeExpression(code.expression);
+    } else if (type === "BinaryExpression") {
+      const left = this.executeExpression(code.left);
+      const right = this.executeExpression(code.right);
+      if (code.operator === "+") {
         return left + right;
-      } else if ( code.operator === "-" ) {
+      } else if (code.operator === "-") {
         return left - right;
-      } else if ( code.operator === "%" ) {
+      } else if (code.operator === "%") {
         return left % right;
-      } else if ( code.operator === "*" ) {
+      } else if (code.operator === "*") {
         return left * right;
-      } else if ( code.operator === "/" ) {
+      } else if (code.operator === "/") {
         return left / right;
-      } else if ( code.operator === "<" ) {
+      } else if (code.operator === "<") {
         return left < right;
-      } else if ( code.operator === "|" ) {
+      } else if (code.operator === "|") {
         return left | right;
-      } else if ( code.operator === "&" ) {
+      } else if (code.operator === "&") {
         return left & right;
-      } else if ( code.operator === ">" ) {
+      } else if (code.operator === ">") {
         return left > right;
-      } else if ( code.operator === "<=" ) {
+      } else if (code.operator === "<=") {
         return left <= right;
-      } else if ( code.operator === ">=" ) {
+      } else if (code.operator === ">=") {
         return left >= right;
-      } else if ( code.operator === "===" || code.operator === "==" ) {
+      } else if (code.operator === "===" || code.operator === "==") {
         return left === right;
-      } else if ( code.operator === "!==" || code.operator === "!=" ) {
+      } else if (code.operator === "!==" || code.operator === "!=") {
         return left !== right;
-      } else if ( code.operator === "in" ) {
+      } else if (code.operator === "in") {
         return left in right;
       } else {
         throw new Error(
           "Unknown BinaryExpression operator '" + code.operator + "'"
         );
       }
-    } else if ( type === "UnaryExpression" ) {
-      if ( code.operator === "delete" ) {
-        const { obj, key } = this.resolveMemberExpression( code.argument, {
+    } else if (type === "UnaryExpression") {
+      if (code.operator === "delete") {
+        const { obj, key } = this.resolveMemberExpression(code.argument, {
           left: true,
-        } );
-        return delete obj?.[ key ];
+        });
+        return delete obj?.[key];
       }
-      const argument = this.executeExpression( code.argument );
-      if ( code.operator === "-" ) {
+      const argument = this.executeExpression(code.argument);
+      if (code.operator === "-") {
         return -argument;
-      } else if ( code.operator === "!" ) {
+      } else if (code.operator === "!") {
         return !argument;
-      } else if ( code.operator === "typeof" ) {
+      } else if (code.operator === "typeof") {
         return typeof argument;
       } else {
         throw new Error(
           "Unknown UnaryExpression operator '" + code.operator + "'"
         );
       }
-    } else if ( type === "LogicalExpression" ) {
-      const left = this.executeExpression( code.left );
-      if ( code.operator === "||" ) {
-        return left || this.executeExpression( code.right );
-      } else if ( code.operator === "&&" ) {
-        return left && this.executeExpression( code.right );
-      } else if ( code.operator === "??" ) {
-        return left ?? this.executeExpression( code.right );
+    } else if (type === "LogicalExpression") {
+      const left = this.executeExpression(code.left);
+      if (code.operator === "||") {
+        return left || this.executeExpression(code.right);
+      } else if (code.operator === "&&") {
+        return left && this.executeExpression(code.right);
+      } else if (code.operator === "??") {
+        return left ?? this.executeExpression(code.right);
       } else {
         throw new Error(
           "Unknown LogicalExpression operator '" + code.operator + "'"
         );
       }
-    } else if ( type === "ConditionalExpression" ) {
-      const test = this.executeExpression( code.test );
+    } else if (type === "ConditionalExpression") {
+      const test = this.executeExpression(code.test);
       return test
-        ? this.executeExpression( code.consequent )
-        : this.executeExpression( code.alternate );
-    } else if ( type === "UpdateExpression" ) {
-      const { obj, key } = this.resolveMemberExpression( code.argument, {
+        ? this.executeExpression(code.consequent)
+        : this.executeExpression(code.alternate);
+    } else if (type === "UpdateExpression") {
+      const { obj, key } = this.resolveMemberExpression(code.argument, {
         left: true,
-      } );
-      if ( code.operator === "++" ) {
-        return code.prefix ? ++obj[ key ] : obj[ key ]++;
-      } else if ( code.operator === "--" ) {
-        return code.prefix ? --obj[ key ] : obj[ key ]--;
+      });
+      if (code.operator === "++") {
+        return code.prefix ? ++obj[key] : obj[key]++;
+      } else if (code.operator === "--") {
+        return code.prefix ? --obj[key] : obj[key]--;
       } else {
         throw new Error(
           "Unknown UpdateExpression operator '" + code.operator + "'"
         );
       }
-    } else if ( type === "ObjectExpression" ) {
-      return code.properties.reduce( ( object, property ) => {
-        if ( property.type === "Property" ) {
-          const key = this.resolveKey( property.key, property.computed );
-          object[ key ] = this.executeExpression( property.value );
-        } else if ( property.type === "SpreadElement" ) {
-          const value = this.executeExpression( property.argument );
-          assertNotReactObject( value );
-          Object.assign( object, value );
+    } else if (type === "ObjectExpression") {
+      return code.properties.reduce((object, property) => {
+        if (property.type === "Property") {
+          const key = this.resolveKey(property.key, property.computed);
+          object[key] = this.executeExpression(property.value);
+        } else if (property.type === "SpreadElement") {
+          const value = this.executeExpression(property.argument);
+          assertNotReactObject(value);
+          Object.assign(object, value);
         } else {
-          throw new Error( "Unknown property type: " + property.type );
+          throw new Error("Unknown property type: " + property.type);
         }
         return object;
-      }, {} );
-    } else if ( type === "ArrayExpression" ) {
-      return this.getArray( code.elements );
-    } else if ( type === "JSXEmptyExpression" ) {
+      }, {});
+    } else if (type === "ArrayExpression") {
+      return this.getArray(code.elements);
+    } else if (type === "JSXEmptyExpression") {
       return null;
-    } else if ( type === "ArrowFunctionExpression" ) {
-      return this.createFunction( code.params, code.body, code.expression );
-    } else if ( type === "TaggedTemplateExpression" ) {
+    } else if (type === "ArrowFunctionExpression") {
+      return this.createFunction(code.params, code.body, code.expression);
+    } else if (type === "TaggedTemplateExpression") {
       // Currently only `styled` component is supported.
 
       let styledTemplate, styledKey;
@@ -1690,31 +1713,31 @@ class VmStack {
             callee: true,
           }
         );
-        if ( keyword !== "styled" ) {
+        if (keyword !== "styled") {
           throw new Error(
             "TaggedTemplateExpression is only supported for `styled` components"
           );
         }
 
-        if ( code.tag.type === "CallExpression" ) {
-          const args = this.getArray( code.tag.arguments );
-          const arg = args?.[ 0 ];
-          const RadixComp = assertRadixComponent( arg );
+        if (code.tag.type === "CallExpression") {
+          const args = this.getArray(code.tag.arguments);
+          const arg = args?.[0];
+          const RadixComp = assertRadixComponent(arg);
 
-          if ( !isStyledComponent( arg ) && !RadixComp ) {
+          if (!isStyledComponent(arg) && !RadixComp) {
             throw new Error(
               'styled() can only take `styled` components or valid Radix components (EG: "Accordion.Trigger")'
             );
           }
 
-          styledTemplate = styled( RadixComp ?? arg );
+          styledTemplate = styled(RadixComp ?? arg);
         } else {
-          if ( key === "keyframes" ) {
+          if (key === "keyframes") {
             styledTemplate = keyframes;
-          } else if ( key in ApprovedTagsSimple ) {
-            styledTemplate = styled( key );
+          } else if (key in ApprovedTagsSimple) {
+            styledTemplate = styled(key);
           } else {
-            throw new Error( "Unsupported styled tag: " + key );
+            throw new Error("Unsupported styled tag: " + key);
           }
           styledKey = key;
         }
@@ -1724,66 +1747,66 @@ class VmStack {
         );
       }
 
-      if ( code.quasi.type !== "TemplateLiteral" ) {
-        throw new Error( "Unknown quasi type: " + code.quasi.type );
+      if (code.quasi.type !== "TemplateLiteral") {
+        throw new Error("Unknown quasi type: " + code.quasi.type);
       }
-      const quasis = code.quasi.quasis.map( ( element ) => {
-        if ( element.type !== "TemplateElement" ) {
-          throw new Error( "Unknown quasis type: " + element.type );
+      const quasis = code.quasi.quasis.map((element) => {
+        if (element.type !== "TemplateElement") {
+          throw new Error("Unknown quasis type: " + element.type);
         }
         return element.value.cooked;
-      } );
+      });
 
       const canCache =
         code.quasi.expressions.length === 0 &&
         code.tag.type !== "CallExpression";
 
-      const cacheKey = JSON.stringify( [ styledKey, ...quasis ] );
+      const cacheKey = JSON.stringify([styledKey, ...quasis]);
 
-      if ( canCache && this.vm.cachedStyledComponents.has( cacheKey ) ) {
-        return this.vm.cachedStyledComponents.get( cacheKey );
+      if (canCache && this.vm.cachedStyledComponents.has(cacheKey)) {
+        return this.vm.cachedStyledComponents.get(cacheKey);
       }
 
-      const expressions = code.quasi.expressions.map( ( expression ) =>
-        this.executeExpression( expression )
+      const expressions = code.quasi.expressions.map((expression) =>
+        this.executeExpression(expression)
       );
 
-      if ( styledTemplate instanceof Function ) {
-        const result = styledTemplate( quasis, ...expressions );
-        if ( canCache ) {
-          this.vm.cachedStyledComponents.set( cacheKey, result );
+      if (styledTemplate instanceof Function) {
+        const result = styledTemplate(quasis, ...expressions);
+        if (canCache) {
+          this.vm.cachedStyledComponents.set(cacheKey, result);
         }
         return result;
       } else {
-        throw new Error( "styled error" );
+        throw new Error("styled error");
       }
     } else {
-      console.log( code );
-      throw new Error( "Unknown expression type '" + type + "'" );
+      console.log(code);
+      throw new Error("Unknown expression type '" + type + "'");
     }
   }
 
-  createFunction ( params, body, isExpression ) {
-    params = params.map( requirePattern );
-    return ( ...args ) => {
-      if ( !this.vm.alive ) {
+  createFunction(params, body, isExpression) {
+    params = params.map(requirePattern);
+    return (...args) => {
+      if (!this.vm.alive) {
         return;
       }
       const isTrusted = !!(
-        args?.[ 0 ]?.nativeEvent instanceof Event &&
-        args?.[ 0 ]?.nativeEvent.isTrusted
+        args?.[0]?.nativeEvent instanceof Event &&
+        args?.[0]?.nativeEvent.isTrusted
       );
-      const stack = this.newStack( isTrusted );
-      params.forEach( ( param, i ) => {
+      const stack = this.newStack(isTrusted);
+      params.forEach((param, i) => {
         let v = undefined;
-        let arg = args?.[ i ];
-        if ( arg !== undefined ) {
+        let arg = args?.[i];
+        if (arg !== undefined) {
           try {
-            if ( arg?.nativeEvent instanceof Event ) {
+            if (arg?.nativeEvent instanceof Event) {
               arg.preventDefault();
               arg = arg.nativeEvent;
             }
-            if ( arg instanceof Event ) {
+            if (arg instanceof Event) {
               arg = {
                 target: {
                   value: arg?.target?.value,
@@ -1808,255 +1831,255 @@ class VmStack {
                 touches: arg?.touches,
               };
             }
-            v = deepCopy( arg );
-          } catch ( e ) {
-            console.warn( e );
+            v = deepCopy(arg);
+          } catch (e) {
+            console.warn(e);
           }
         }
-        stack.stackDeclare( param, v );
-      } );
+        stack.stackDeclare(param, v);
+      });
       return isExpression
-        ? stack.executeExpression( body )
-        : stack.executeStatement( body )?.[ "result" ];
+        ? stack.executeExpression(body)
+        : stack.executeStatement(body)?.["result"];
     };
   }
 
-  stackDeclare ( pattern, value ) {
-    if ( pattern.type === "Identifier" ) {
-      this.stack.state[ pattern.name ] = value;
-    } else if ( pattern.type === "ArrayPattern" ) {
-      assertNotReactObject( value );
-      pattern.elements.forEach( ( element, i ) => {
-        if ( element.type === "RestElement" ) {
-          this.stackDeclare( element.argument, value.slice( i ) );
+  stackDeclare(pattern, value) {
+    if (pattern.type === "Identifier") {
+      this.stack.state[pattern.name] = value;
+    } else if (pattern.type === "ArrayPattern") {
+      assertNotReactObject(value);
+      pattern.elements.forEach((element, i) => {
+        if (element.type === "RestElement") {
+          this.stackDeclare(element.argument, value.slice(i));
         } else {
-          this.stackDeclare( element, value?.[ i ] );
+          this.stackDeclare(element, value?.[i]);
         }
-      } );
-    } else if ( pattern.type === "ObjectPattern" ) {
-      assertNotReactObject( value );
+      });
+    } else if (pattern.type === "ObjectPattern") {
+      assertNotReactObject(value);
       const seen = new Set();
-      pattern.properties.forEach( ( property ) => {
-        if ( property.type === "RestElement" ) {
+      pattern.properties.forEach((property) => {
+        if (property.type === "RestElement") {
           const rest = {};
-          if ( isObject( value ) ) {
-            Object.assign( rest, value );
-            seen.forEach( ( key ) => delete rest[ key ] );
+          if (isObject(value)) {
+            Object.assign(rest, value);
+            seen.forEach((key) => delete rest[key]);
           }
-          this.stackDeclare( property.argument, rest );
+          this.stackDeclare(property.argument, rest);
         } else {
-          this.stackDeclare( property.value, value?.[ property.key.name ] );
-          seen.add( property.key.name );
+          this.stackDeclare(property.value, value?.[property.key.name]);
+          seen.add(property.key.name);
         }
-      } );
+      });
     } else {
-      throw new Error( "Unknown pattern type: " + pattern.type );
+      throw new Error("Unknown pattern type: " + pattern.type);
     }
   }
 
-  executeStatement ( token ) {
-    StatementDebug && console.log( token );
-    if ( !token || token.type === "EmptyStatement" ) {
+  executeStatement(token) {
+    StatementDebug && console.log(token);
+    if (!token || token.type === "EmptyStatement") {
       return null;
-    } else if ( token.type === "VariableDeclaration" ) {
-      token.declarations.forEach( ( declaration ) => {
-        if ( declaration.type === "VariableDeclarator" ) {
+    } else if (token.type === "VariableDeclaration") {
+      token.declarations.forEach((declaration) => {
+        if (declaration.type === "VariableDeclarator") {
           this.stackDeclare(
-            requirePattern( declaration.id ),
-            this.executeExpression( declaration.init )
+            requirePattern(declaration.id),
+            this.executeExpression(declaration.init)
           );
         } else {
           throw new Error(
             "Unknown variable declaration type '" + declaration.type + "'"
           );
         }
-      } );
-    } else if ( token.type === "ReturnStatement" ) {
+      });
+    } else if (token.type === "ReturnStatement") {
       return {
-        result: this.executeExpression( token.argument ),
+        result: this.executeExpression(token.argument),
       };
-    } else if ( token.type === "FunctionDeclaration" ) {
+    } else if (token.type === "FunctionDeclaration") {
       this.stackDeclare(
-        requireIdentifier( token.id ),
-        this.createFunction( token.params, token.body, token.expression )
+        requireIdentifier(token.id),
+        this.createFunction(token.params, token.body, token.expression)
       );
-    } else if ( token.type === "ExpressionStatement" ) {
-      this.executeExpression( token.expression );
-    } else if ( token.type === "BlockStatement" || token.type === "Program" ) {
+    } else if (token.type === "ExpressionStatement") {
+      this.executeExpression(token.expression);
+    } else if (token.type === "BlockStatement" || token.type === "Program") {
       const body = token.body;
       const stack = this.newStack();
-      for ( let i = 0; i < body.length; i++ ) {
-        const result = stack.executeStatement( body[ i ] );
-        if ( result ) {
+      for (let i = 0; i < body.length; i++) {
+        const result = stack.executeStatement(body[i]);
+        if (result) {
           return result;
         }
       }
-    } else if ( token.type === "ForStatement" ) {
+    } else if (token.type === "ForStatement") {
       const stack = this.newStack();
-      stack.executeStatement( token.init );
-      while ( this.vm.loopLimit-- > 0 ) {
-        if ( token.test ) {
-          const test = stack.executeExpression( token.test );
-          if ( !test ) {
+      stack.executeStatement(token.init);
+      while (this.vm.loopLimit-- > 0) {
+        if (token.test) {
+          const test = stack.executeExpression(token.test);
+          if (!test) {
             break;
           }
         }
-        const result = stack.executeStatement( token.body );
-        if ( result ) {
-          if ( result.break ) {
+        const result = stack.executeStatement(token.body);
+        if (result) {
+          if (result.break) {
             break;
-          } else if ( result.continue ) {
+          } else if (result.continue) {
             // continue
           } else {
             return result;
           }
         }
-        stack.executeExpression( token.update );
+        stack.executeExpression(token.update);
       }
-      if ( this.vm.loopLimit <= 0 ) {
-        throw new Error( "Exceeded loop limit" );
+      if (this.vm.loopLimit <= 0) {
+        throw new Error("Exceeded loop limit");
       }
-    } else if ( token.type === "ForOfStatement" ) {
+    } else if (token.type === "ForOfStatement") {
       const stack = this.newStack();
-      const right = stack.executeExpression( token.right );
-      assertNotReactObject( right );
-      for ( const value of right ) {
-        if ( this.vm.loopLimit-- <= 0 ) {
-          throw new Error( "Exceeded loop limit" );
+      const right = stack.executeExpression(token.right);
+      assertNotReactObject(right);
+      for (const value of right) {
+        if (this.vm.loopLimit-- <= 0) {
+          throw new Error("Exceeded loop limit");
         }
-        if ( token.left.type === "VariableDeclaration" ) {
-          if ( token.left.declarations.length !== 1 ) {
-            throw new Error( "Invalid for-of statement" );
+        if (token.left.type === "VariableDeclaration") {
+          if (token.left.declarations.length !== 1) {
+            throw new Error("Invalid for-of statement");
           }
-          token.left.declarations.forEach( ( declaration ) => {
-            if ( declaration.type === "VariableDeclarator" ) {
-              this.stackDeclare( requirePattern( declaration.id ), value );
+          token.left.declarations.forEach((declaration) => {
+            if (declaration.type === "VariableDeclarator") {
+              this.stackDeclare(requirePattern(declaration.id), value);
             } else {
               throw new Error(
                 "Unknown variable declaration type '" + declaration.type + "'"
               );
             }
-          } );
+          });
         } else {
-          const { obj, key } = this.resolveMemberExpression( token.left, {
+          const { obj, key } = this.resolveMemberExpression(token.left, {
             left: true,
-          } );
-          obj[ key ] = value;
+          });
+          obj[key] = value;
         }
-        const result = stack.executeStatement( token.body );
-        if ( result ) {
-          if ( result.break ) {
+        const result = stack.executeStatement(token.body);
+        if (result) {
+          if (result.break) {
             break;
-          } else if ( result.continue ) {
+          } else if (result.continue) {
             // continue
           } else {
             return result;
           }
         }
       }
-    } else if ( token.type === "WhileStatement" ) {
+    } else if (token.type === "WhileStatement") {
       const stack = this.newStack();
-      while ( this.vm.loopLimit-- > 0 ) {
-        const test = stack.executeExpression( token.test );
-        if ( !test ) {
+      while (this.vm.loopLimit-- > 0) {
+        const test = stack.executeExpression(token.test);
+        if (!test) {
           break;
         }
-        const result = stack.executeStatement( token.body );
-        if ( result ) {
-          if ( result.break ) {
+        const result = stack.executeStatement(token.body);
+        if (result) {
+          if (result.break) {
             break;
-          } else if ( result.continue ) {
+          } else if (result.continue) {
             // continue
           } else {
             return result;
           }
         }
       }
-      if ( this.vm.loopLimit <= 0 ) {
-        throw new Error( "Exceeded loop limit" );
+      if (this.vm.loopLimit <= 0) {
+        throw new Error("Exceeded loop limit");
       }
-    } else if ( token.type === "IfStatement" ) {
-      const test = this.executeExpression( token.test );
+    } else if (token.type === "IfStatement") {
+      const test = this.executeExpression(token.test);
       const stack = this.newStack();
       const result = !!test
-        ? stack.executeStatement( token.consequent )
-        : stack.executeStatement( token.alternate );
-      if ( result ) {
+        ? stack.executeStatement(token.consequent)
+        : stack.executeStatement(token.alternate);
+      if (result) {
         return result;
       }
-    } else if ( token.type === "BreakStatement" ) {
+    } else if (token.type === "BreakStatement") {
       return {
         break: true,
       };
-    } else if ( token.type === "ContinueStatement" ) {
+    } else if (token.type === "ContinueStatement") {
       return {
         continue: true,
       };
-    } else if ( token.type === "ThrowStatement" ) {
-      throw this.executeExpression( token.argument );
-    } else if ( token.type === "TryStatement" ) {
+    } else if (token.type === "ThrowStatement") {
+      throw this.executeExpression(token.argument);
+    } else if (token.type === "TryStatement") {
       try {
         const stack = this.newStack();
-        const result = stack.executeStatement( token.block );
-        if ( result ) {
+        const result = stack.executeStatement(token.block);
+        if (result) {
           return result;
         }
-      } catch ( e ) {
-        if ( !this.vm.alive || !token.handler ) {
+      } catch (e) {
+        if (!this.vm.alive || !token.handler) {
           return null;
         }
-        if ( token.handler.type !== "CatchClause" ) {
+        if (token.handler.type !== "CatchClause") {
           throw new Error(
             "Unknown try statement handler type '" + token.handler.type + "'"
           );
         }
         const stack = this.newStack();
-        if ( token.handler.param ) {
+        if (token.handler.param) {
           stack.stackDeclare(
-            requireIdentifier( token.handler.param ),
+            requireIdentifier(token.handler.param),
             deepCopy(
               e instanceof Error
                 ? {
-                  name: e?.name,
-                  message: e?.message,
-                  toString: () => e.toString(),
-                }
+                    name: e?.name,
+                    message: e?.message,
+                    toString: () => e.toString(),
+                  }
                 : e
             )
           );
         }
-        const result = stack.executeStatement( token.handler.body );
-        if ( result ) {
+        const result = stack.executeStatement(token.handler.body);
+        if (result) {
           return result;
         }
       } finally {
-        if ( this.vm.alive ) {
+        if (this.vm.alive) {
           const stack = this.newStack();
-          stack.executeStatement( token.finalizer );
+          stack.executeStatement(token.finalizer);
         }
       }
-    } else if ( token.type === "SwitchStatement" ) {
-      const discriminant = this.executeExpression( token.discriminant );
+    } else if (token.type === "SwitchStatement") {
+      const discriminant = this.executeExpression(token.discriminant);
       const stack = this.newStack();
       const cases = token.cases;
       let found = false;
-      for ( const caseToken of cases ) {
-        if ( caseToken.type !== "SwitchCase" ) {
-          throw new Error( "Unknown switch case type '" + caseToken.type + "'" );
+      for (const caseToken of cases) {
+        if (caseToken.type !== "SwitchCase") {
+          throw new Error("Unknown switch case type '" + caseToken.type + "'");
         }
-        if ( !found && caseToken.test ) {
-          const test = stack.executeExpression( caseToken.test );
-          if ( test !== discriminant ) {
+        if (!found && caseToken.test) {
+          const test = stack.executeExpression(caseToken.test);
+          if (test !== discriminant) {
             continue;
           }
           found = true;
         }
-        if ( found ) {
+        if (found) {
           let isBreak = false;
-          for ( const statement of caseToken.consequent ) {
-            const result = stack.executeStatement( statement );
-            if ( result ) {
-              if ( result.break ) {
+          for (const statement of caseToken.consequent) {
+            const result = stack.executeStatement(statement);
+            if (result) {
+              if (result.break) {
                 isBreak = true;
                 break;
               } else {
@@ -2064,20 +2087,20 @@ class VmStack {
               }
             }
           }
-          if ( isBreak ) {
+          if (isBreak) {
             break;
           }
         }
       }
     } else {
-      throw new Error( "Unknown token type '" + token.type + "'" );
+      throw new Error("Unknown token type '" + token.type + "'");
     }
     return null;
   }
 }
 
 export default class VM {
-  constructor ( options ) {
+  constructor(options) {
     const {
       near,
       rawCode,
@@ -2101,39 +2124,39 @@ export default class VM {
 
     this.near = near;
     try {
-      this.code = parseCode( rawCode );
+      this.code = parseCode(rawCode);
       this.compileError = null;
-    } catch ( e ) {
+    } catch (e) {
       this.code = null;
       this.compileError = e;
-      console.error( e );
+      console.error(e);
     }
 
-    if ( !this.code ) {
+    if (!this.code) {
       this.alive = false;
       return;
     }
 
     this.setReactState = setReactState
-      ? ( s ) =>
-        setReactState( {
-          hooks: this.hooks,
-          state: isObject( s ) ? Object.assign( {}, s ) : s,
-        } )
+      ? (s) =>
+          setReactState({
+            hooks: this.hooks,
+            state: isObject(s) ? Object.assign({}, s) : s,
+          })
       : () => {
-        throw new Error( "State is unavailable for modules" );
-      };
+          throw new Error("State is unavailable for modules");
+        };
     this.setReactHook = setReactState
-      ? ( i, v ) => {
-        this.hooks[ i ] = v;
-        setReactState( {
-          hooks: this.hooks,
-          state: this.state.state,
-        } );
-      }
+      ? (i, v) => {
+          this.hooks[i] = v;
+          setReactState({
+            hooks: this.hooks,
+            state: this.state.state,
+          });
+        }
       : () => {
-        throw new Error( "State is unavailable for modules" );
-      };
+          throw new Error("State is unavailable for modules");
+        };
     this.cache = cache;
     this.refreshCache = refreshCache;
     this.confirmTransactions = confirmTransactions;
@@ -2146,7 +2169,7 @@ export default class VM {
     this.ethersProviderContext = ethersProviderContext;
 
     this.ethersProvider = ethersProviderContext?.provider
-      ? new ethers.providers.Web3Provider( ethersProviderContext.provider )
+      ? new ethers.providers.Web3Provider(ethersProviderContext.provider)
       : null;
     this.globalStateContext = globalStateContext;
     this.timeouts = new Set();
@@ -2154,37 +2177,37 @@ export default class VM {
     this.websockets = [];
     this.vmInstances = new Map();
     this.networkId =
-      widgetConfigs.findLast( ( config ) => config && config.networkId )
+      widgetConfigs.findLast((config) => config && config.networkId)
         ?.networkId || near.config.networkId;
   }
 
-  stop () {
-    if ( !this.alive ) {
+  stop() {
+    if (!this.alive) {
       return;
     }
     this.alive = false;
-    this.timeouts.forEach( ( timeout ) => clearTimeout( timeout ) );
-    this.intervals.forEach( ( interval ) => clearInterval( interval ) );
-    this.websockets.forEach( ( websocket ) => websocket.close() );
-    this.vmInstances.forEach( ( vm ) => vm.stop() );
+    this.timeouts.forEach((timeout) => clearTimeout(timeout));
+    this.intervals.forEach((interval) => clearInterval(interval));
+    this.websockets.forEach((websocket) => websocket.close());
+    this.vmInstances.forEach((vm) => vm.stop());
   }
 
-  cachedPromise ( promise, subscribe ) {
+  cachedPromise(promise, subscribe) {
     const invalidate = {
       onInvalidate: () => {
-        if ( this.alive ) {
+        if (this.alive) {
           this.refreshCache();
         }
       },
       subscribe: !!subscribe,
     };
-    return deepCopy( promise( invalidate ) );
+    return deepCopy(promise(invalidate));
   }
 
-  cachedSocialGet ( keys, recursive, blockId, options, cacheOptions ) {
-    keys = Array.isArray( keys ) ? keys : [ keys ];
+  cachedSocialGet(keys, recursive, blockId, options, cacheOptions) {
+    keys = Array.isArray(keys) ? keys : [keys];
     return this.cachedPromise(
-      ( invalidate ) =>
+      (invalidate) =>
         this.cache.socialGet(
           this.near,
           keys,
@@ -2198,20 +2221,20 @@ export default class VM {
     );
   }
 
-  storageGet ( domain, key ) {
-    return this.cachedPromise( ( invalidate ) =>
-      this.cache.localStorageGet( domain, key, invalidate )
+  storageGet(domain, key) {
+    return this.cachedPromise((invalidate) =>
+      this.cache.localStorageGet(domain, key, invalidate)
     );
   }
 
-  storageSet ( domain, key, value ) {
-    return this.cache.localStorageSet( domain, key, value );
+  storageSet(domain, key, value) {
+    return this.cache.localStorageSet(domain, key, value);
   }
 
-  cachedSocialKeys ( keys, blockId, options, cacheOptions ) {
-    keys = Array.isArray( keys ) ? keys : [ keys ];
+  cachedSocialKeys(keys, blockId, options, cacheOptions) {
+    keys = Array.isArray(keys) ? keys : [keys];
     return this.cachedPromise(
-      ( invalidate ) =>
+      (invalidate) =>
         this.cache.cachedViewCall(
           this.near,
           this.near.config.contractName,
@@ -2228,17 +2251,17 @@ export default class VM {
     );
   }
 
-  asyncNearView ( contractName, methodName, args, blockId ) {
-    return this.near.viewCall( contractName, methodName, args, blockId );
+  asyncNearView(contractName, methodName, args, blockId) {
+    return this.near.viewCall(contractName, methodName, args, blockId);
   }
 
-  asyncCalimeroView ( contractName, methodName, args, blockId ) {
-    return this.near.viewCalimero( contractName, methodName, args, blockId );
+  asyncCalimeroView(contractName, methodName, args, blockId) {
+    return this.near.viewCalimero(contractName, methodName, args, blockId);
   }
 
-  cachedEthersCall ( callee, args, subscribe ) {
+  cachedEthersCall(callee, args, subscribe) {
     return this.cachedPromise(
-      ( invalidate ) =>
+      (invalidate) =>
         this.cache.cachedEthersCall(
           this.ethersProvider,
           callee,
@@ -2250,7 +2273,7 @@ export default class VM {
     );
   }
 
-  cachedNearView (
+  cachedNearView(
     contractName,
     methodName,
     args,
@@ -2259,7 +2282,7 @@ export default class VM {
     cacheOptions
   ) {
     return this.cachedPromise(
-      ( invalidate ) =>
+      (invalidate) =>
         this.cache.cachedViewCall(
           this.near,
           contractName,
@@ -2272,7 +2295,7 @@ export default class VM {
       subscribe
     );
   }
-  cachedCalimeroView (
+  cachedCalimeroView(
     contractName,
     methodName,
     args,
@@ -2281,7 +2304,7 @@ export default class VM {
     cacheOptions
   ) {
     return this.cachedPromise(
-      ( invalidate ) =>
+      (invalidate) =>
         this.cache.cachedCalimeroViewCall(
           this.near,
           contractName,
@@ -2295,29 +2318,29 @@ export default class VM {
     );
   }
 
-  cachedNearBlock ( blockId, subscribe, cacheOptions ) {
+  cachedNearBlock(blockId, subscribe, cacheOptions) {
     return this.cachedPromise(
-      ( invalidate ) =>
-        this.cache.cachedBlock( this.near, blockId, invalidate, cacheOptions ),
+      (invalidate) =>
+        this.cache.cachedBlock(this.near, blockId, invalidate, cacheOptions),
       subscribe
     );
   }
 
-  asyncFetch ( url, options ) {
-    return this.cache.asyncFetch( url, options );
+  asyncFetch(url, options) {
+    return this.cache.asyncFetch(url, options);
   }
 
-  cachedFetch ( url, options, cacheOptions ) {
+  cachedFetch(url, options, cacheOptions) {
     return this.cachedPromise(
-      ( invalidate ) =>
-        this.cache.cachedFetch( url, options, invalidate, cacheOptions ),
+      (invalidate) =>
+        this.cache.cachedFetch(url, options, invalidate, cacheOptions),
       options?.subscribe
     );
   }
 
-  cachedIndex ( action, key, options, cacheOptions ) {
+  cachedIndex(action, key, options, cacheOptions) {
     return this.cachedPromise(
-      ( invalidate ) =>
+      (invalidate) =>
         this.cache.socialIndex(
           this.near,
           action,
@@ -2330,9 +2353,9 @@ export default class VM {
     );
   }
 
-  useCache ( promiseGenerator, dataKey, options, cacheOptions ) {
+  useCache(promiseGenerator, dataKey, options, cacheOptions) {
     return this.cachedPromise(
-      ( invalidate ) =>
+      (invalidate) =>
         this.cache.cachedCustomPromise(
           {
             widgetSrc: this.widgetSrc,
@@ -2346,43 +2369,43 @@ export default class VM {
     );
   }
 
-  socialSet ( data, options ) {
-    return this.requestCommit( {
+  socialSet(data, options) {
+    return this.requestCommit({
       data,
       force: options?.force,
       onCommit: options?.onCommit,
       onCancel: options?.onCancel,
-    } );
+    });
   }
 
-  vmRequire ( src ) {
-    const [ srcPath, version ] = src.split( "@" );
+  vmRequire(src) {
+    const [srcPath, version] = src.split("@");
     const code = this.cachedSocialGet(
       srcPath.toString(),
       false,
       version, // may be undefined, meaning `latest`
       undefined
     );
-    if ( !code ) {
+    if (!code) {
       return code;
     }
-    const vm = this.getVmInstance( code, src );
-    return vm.execCode( {
-      context: deepCopy( this.context ),
+    const vm = this.getVmInstance(code, src);
+    return vm.execCode({
+      context: deepCopy(this.context),
       forwardedProps: this.forwardedProps,
-    } );
+    });
   }
 
-  getVmInstance ( code, src ) {
-    if ( this.vmInstances.has( src ) ) {
-      const vm = this.vmInstances.get( src );
-      if ( vm.rawCode === code ) {
+  getVmInstance(code, src) {
+    if (this.vmInstances.has(src)) {
+      const vm = this.vmInstances.get(src);
+      if (vm.rawCode === code) {
         return vm;
       }
       vm.stop();
-      this.vmInstances.delete( src );
+      this.vmInstances.delete(src);
     }
-    const vm = new VM( {
+    const vm = new VM({
       near: this.near,
       rawCode: code,
       cache: this.cache,
@@ -2395,41 +2418,41 @@ export default class VM {
       widgetConfigs: this.widgetConfigs,
       ethersProviderContext: this.ethersProviderContext,
       isModule: true,
-    } );
-    this.vmInstances.set( src, vm );
+    });
+    this.vmInstances.set(src, vm);
     return vm;
   }
 
-  renderCode ( args ) {
-    if ( this.compileError ) {
+  renderCode(args) {
+    if (this.compileError) {
       return (
         <div className="alert alert-danger">
           Compilation error:
-          <pre>{ this.compileError.message }</pre>
-          <pre>{ this.compileError.stack }</pre>
+          <pre>{this.compileError.message}</pre>
+          <pre>{this.compileError.stack}</pre>
         </div>
       );
     }
-    if ( !this.alive ) {
+    if (!this.alive) {
       return <div className="alert alert-danger">VM is dead</div>;
     }
 
-    const result = this.execCode( args );
+    const result = this.execCode(args);
 
-    return isReactObject( result ) ||
+    return isReactObject(result) ||
       typeof result === "string" ||
       typeof result === "number" ? (
       result
     ) : (
-      <pre>{ JSON.stringify( result, undefined, 2 ) }</pre>
+      <pre>{JSON.stringify(result, undefined, 2)}</pre>
     );
   }
 
-  execCode ( { props, context, reactState, forwardedProps } ) {
-    if ( this.compileError ) {
+  execCode({ props, context, reactState, forwardedProps }) {
+    if (this.compileError) {
       throw this.compileError;
     }
-    if ( this.depth >= MaxDepth ) {
+    if (this.depth >= MaxDepth) {
       return "Too deep";
     }
     this.gIndex = 0;
@@ -2437,24 +2460,24 @@ export default class VM {
     this.hooks = hooks;
     this.state = {
       ...GlobalInjected,
-      props: isObject( props ) ? Object.assign( {}, props ) : props,
+      props: isObject(props) ? Object.assign({}, props) : props,
       context,
       state,
-      get elliptic () {
+      get elliptic() {
         delete this.elliptic;
-        this.elliptic = cloneDeep( elliptic );
+        this.elliptic = cloneDeep(elliptic);
         return this.elliptic;
       },
     };
     this.forwardedProps = forwardedProps;
     this.loopLimit = LoopLimit;
-    this.vmStack = new VmStack( this, undefined, this.state );
-    const executionResult = this.vmStack.executeStatement( this.code );
-    if ( executionResult?.break ) {
-      throw new Error( "BreakStatement outside of a loop" );
+    this.vmStack = new VmStack(this, undefined, this.state);
+    const executionResult = this.vmStack.executeStatement(this.code);
+    if (executionResult?.break) {
+      throw new Error("BreakStatement outside of a loop");
     }
-    if ( executionResult?.continue ) {
-      throw new Error( "ContinueStatement outside of a loop" );
+    if (executionResult?.continue) {
+      throw new Error("ContinueStatement outside of a loop");
     }
     return executionResult?.result;
   }

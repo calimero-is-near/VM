@@ -292,7 +292,6 @@ async function signCalimeroFakTransaction(
     );
   }
 
-  // const accountId = await getCurrentAccount( near, app );
   const keyStore = new nearAPI.keyStores.InMemoryKeyStore();
   const keyPair = nearAPI.KeyPair.fromString(key);
   keyStore.setKey(CalimeroConfig.networkId, accountId, keyPair);
@@ -335,7 +334,7 @@ async function submitFakCalimeroTransaction(
   const key = await getCalimeroFakKey(contractName);
   if (!key) {
     throw new Error(
-      "Method: Calimero.sign. Requires requestAccessKey to be called first"
+      "Method: Near.fakCalimeroCall. Requires requestAccessKey to be called first"
     );
   }
 
