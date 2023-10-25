@@ -227,10 +227,8 @@ async function verifyCalimeroFak(
     const result = await near.calimeroConnection.connection.provider.query(
       params
     );
-    console.log("veerif pre check");
     return checkFakKey(result, contractName, methods);
   } catch (e) {
-    console.log("errror", e);
     console.error(e);
     return false;
   }
