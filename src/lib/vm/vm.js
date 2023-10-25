@@ -953,13 +953,6 @@ class VmStack {
       } else if ( keyword === "Near" && callee === "hasValidFak" ) {
         return this.vm.near.verifyFak( this.vm.widgetSrc, ...args );
       } else if ( keyword === "Near" && callee === "fakCalimeroCall" || keyword === "Calimero" && callee === "fakCall" ) {
-        console.log( "args 0", args[ 0 ] );
-        console.log( "args 1", args[ 1 ] );
-        console.log( "args 2", args[ 2 ] );
-        console.log( "args 3", args[ 3 ] );
-        console.log( "args 4", args[ 4 ] );
-        console.log( "args 5", args[ 5 ] );
-
         if ( args.length < 2 || args.length > 5 ) {
           throw new Error(
             "Method: Calimero.fakCall. Required argument: 'contractName'. If the first argument is a string: 'methodName'. Optional: 'args', 'gas' (defaults to 300Tg), 'deposit' (defaults to 0)"
