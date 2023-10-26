@@ -169,8 +169,8 @@ async function requestFak(
 }
 
 const getCalimeroFakKey = async (contract) => {
-  const record = localStorage.getItem("cali:" + contract);
-  return record?.publicKey;
+  const record = JSON.parse(localStorage.getItem("cali:" + contract));
+  return record?.accessKey;
 };
 
 async function loginWithMNWallet(storageKey, near, contractName, methodNames) {
@@ -178,11 +178,15 @@ async function loginWithMNWallet(storageKey, near, contractName, methodNames) {
   const newUrl = new URL(CalimeroConfig.walletUrl + "/login/");
   const hashParams = new URLSearchParams();
 
-  const contractAccount = await near.calimeroConnection.account(contractName);
-  await contractAccount.state();
-  newUrl.searchParams.set("contract_id", contractName);
-  const accessKey = nearAPI.utils.KeyPairEd25519.fromRandom();
-  newUrl.searchParams.set("public_key", accessKey.getPublicKey().toString());
+  let successPath = `${currentUrl.href}`;
+  if (contractName) {
+    const contractAccount = await near.calimeroConnection.account(contractName);
+    await contractAccount.state();
+    newUrl.searchParams.set("contract_id", contractName);
+    const accessKey = nearAPI.utils.KeyPairEd25519.fromRandom();
+    newUrl.searchParams.set("public_key", accessKey.getPublicKey().toString());
+    successPath = `${successPath}?networkId=${storageKey}&contractName=${contractName}&accessKey=${accessKey}`;
+  }
 
   if (methodNames) {
     methodNames.forEach((methodName) => {
@@ -190,8 +194,7 @@ async function loginWithMNWallet(storageKey, near, contractName, methodNames) {
     });
   }
 
-  const url = `${currentUrl.href}?networkId=${storageKey}&contractName=${contractName}`;
-  newUrl.searchParams.set("success_url", url);
+  newUrl.searchParams.set("success_url", successPath);
   newUrl.searchParams.set("failure_url", currentUrl.href);
 
   hashParams.set("calimeroRPCEndpoint", CalimeroConfig.calimeroUrl);
@@ -268,7 +271,6 @@ async function signWithCalimeroFak(storageKey, near, contractName, message) {
       "Method: Calimero.sign. Requires requestAccessKey to be called first"
     );
   }
-
   const keyPair = nearAPI.KeyPair.fromString(key);
   return keyPair.sign(message);
 }
@@ -279,9 +281,9 @@ async function signCalimeroFakTransaction(
   contractName,
   methodName,
   args,
+  accountId,
   gas,
-  deposit,
-  accountId
+  deposit
 ) {
   console.log("signCalimeroFakTransaction");
   const key = await getCalimeroFakKey(contractName);
@@ -694,7 +696,8 @@ async function _initNear({
     methodName,
     args,
     gas,
-    deposit
+    deposit,
+    accountId
   ) =>
     signCalimeroFakTransaction(
       storageKey,
@@ -703,14 +706,15 @@ async function _initNear({
       methodName,
       args,
       gas,
-      deposit
+      deposit,
+      accountId
     );
   _near.submitCalimeroFakTransaction = (
     storageKey,
     contractName,
     methodName,
-    accountId,
     args,
+    accountId,
     gas,
     deposit
   ) =>
