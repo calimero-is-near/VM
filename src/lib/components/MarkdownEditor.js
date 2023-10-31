@@ -29,8 +29,8 @@ export const MarkdownEditor = (props) => {
       theme="snow"
       value={props.value}
       onChange={(value) => {
-        const newVal = sanitizePasteHtml(value);
-        props.setValue(newVal);
+        const purifiedText = sanitizePasteHtml(value);
+        props.setValue(purifiedText);
       }}
       onKeyDown={(e) => {
         if (e.key === "Enter" && !e.shiftKey) {
