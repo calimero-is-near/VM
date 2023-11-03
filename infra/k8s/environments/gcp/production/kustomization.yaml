@@ -10,7 +10,7 @@ images:
   newTag: 15dc51e
 - name: bos-gateway-internal-production
   newName: europe-west3-docker.pkg.dev/calimero-ops/calimero/bos-gateway-internal-production
-  newTag: 900438c
+  newTag: e727858
 - name: bos-gateway-public-production
   newName: europe-west3-docker.pkg.dev/calimero-ops/calimero/bos-gateway-public-production
   newTag: portal-temp-v0.0.0
