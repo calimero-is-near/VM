@@ -956,10 +956,10 @@ class VmStack {
       } else if (keyword === "Near" && callee === "requestFak") {
         return this.vm.near.requestFak(this.vm.widgetSrc, ...args);
       } else if (
-        (keyword === "Near" && callee === "loginWithMNWallet") ||
-        (keyword === "Calimero" && callee === "loginWithMNWallet")
+        (keyword === "Near" && callee === "requestCalimeroFak") ||
+        (keyword === "Calimero" && callee === "requestFak")
       ) {
-        return this.vm.near.loginWithMNWallet(
+        return this.vm.near.requestCalimeroFak(
           this.vm.near.calimeroConnection.config.networkId,
           ...args
         );
@@ -1168,6 +1168,17 @@ class VmStack {
           throw new Error("Missing argument 'key' for Storage.get");
         }
         return this.vm.storageGet(
+          {
+            src: args[1] ?? this.vm.widgetSrc,
+            type: StorageType.Public,
+          },
+          args[0]
+        );
+      } else if (keyword === "Storage" && callee === "innerGet") {
+        if (args.length < 1) {
+          throw new Error("Missing argument 'key' for Storage.innerGet");
+        }
+        return this.vm.storageInnerGet(
           {
             src: args[1] ?? this.vm.widgetSrc,
             type: StorageType.Public,
@@ -1401,6 +1412,10 @@ class VmStack {
 
           if (typeof params.isThread !== "boolean") {
             throw new Error("Invalid isThread. It should be a boolean.");
+          }
+
+          if (typeof params.handleReaction !== "function") {
+            throw new Error("Invalid handleReaction. It should be a function.");
           }
 
           if (params.setThread && typeof params.setThread !== "function") {
@@ -2235,6 +2250,10 @@ export default class VM {
     return this.cachedPromise((invalidate) =>
       this.cache.localStorageGet(domain, key, invalidate)
     );
+  }
+
+  storageInnerGet(domain, key) {
+    return this.cache.asyncLocalStorageGet(domain, key);
   }
 
   storageSet(domain, key, value) {
