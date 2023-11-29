@@ -1,7 +1,44 @@
 # Changelog
 
-## Pending 
+## Pending
 
+- FIX: Check type of `href` before sanitizing it.
+- FIX: `atob` and `btoa` are working correctly now.
+
+## 2.5.2
+
+- Use `styled-components` in combination with `customElements` like `Link`:
+
+```jsx
+const MyLink = styled("Link")`
+  color: red;
+`;
+
+return (
+  <MyLink href="/my/page">
+    Click Me!
+  </MyLink>
+);
+```
+
+## 2.5.1
+
+- FIX: Add back `Ethers.send`, that was incorrectly removed as part of the https://github.com/NearSocial/VM/pull/128
+- FIX: Disable `is` attribute to avoid conflicts with React. Reported by BrunoModificato from OtterSec.
+
+## 2.5.0
+
+- Fix `default` case for the switch statement in `VM`.
+- Add a VM feature, `enableComponentSrcDataKey`, which adds the `data-component` attribute specifying the path of the comonent responsible for rendering the DOM element.
+- Add support for VM.require when using redirectMap.
+- Fixes an issue with VM.require not retaining context in migration to initGlobalFunctions.
+- Add `onLink` and `onImage` to Markdown component. It allows to display links and images differently.
+- Expose all VM functions into the state directly, it simplifies VM readability and implementation.
+- Expose certain native objects directly into the state. It should improve access to the functions.
+- Update the way events and errors are passed to the functions. 
+  - For events, expose `preventDefault()` and `stopPropagation()` functions.
+  NOTE: Previously, all React's `SyntheticEvent`s were getting `preventDefault()` called by default.
+  - For errors, expose `message`, `name` and `type`.
 - Fix `vm.depth` not being initialized.
 - Introduce `useMemo` hook. Similar to the React hook, it calculates a value and memoizes it, only recalculating when one of its dependencies changes.
 
@@ -40,6 +77,14 @@ return (
 );
 ```
 
+<<<<<<< HEAD
+=======
+## 2.4.2
+
+- Add missing code changes (`cacheOptions` and `lodash`) from 2.4.0.
+> This happened due to revert from master that later cleaned changes from dev at merge conflict.
+
+>>>>>>> upstream/improve-sanitize
 ## 2.4.1
 
 - FIX: Resolve bug with `VM.require` affected by the introduction of `useState` and `useEffect` hooks.
@@ -102,6 +147,7 @@ const index = Social.index(
 );
 ```
 
+<<<<<<< HEAD
 ## 2.3.2
 
 - Nothing. Missed the package.json bump in the previous release.
@@ -190,6 +236,8 @@ const index = Social.index(
   }
 );
 ```
+=======
+>>>>>>> upstream/improve-sanitize
 - Replace `lodash` dependency with `lodash.clonedeep` to reduce bundle size.
 
 ## 2.3.2
