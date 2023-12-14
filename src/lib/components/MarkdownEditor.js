@@ -18,7 +18,14 @@ export const MarkdownEditor = (props) => {
 
   const handlePaste = (e) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData("text/html");
+    const clipboardData = e.clipboardData;
+    let pastedData;
+
+    if (clipboardData.types.includes('text/html')) {
+      pastedData = clipboardData.getData('text/html');
+    } else if (clipboardData.types.includes('text/plain')) {
+      pastedData = clipboardData.getData('text/plain');
+    }
     const processedData = sanitizePasteHtml(pastedData);
     quillRef.current.root.innerHTML = processedData;
   };
