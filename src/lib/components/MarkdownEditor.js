@@ -1,7 +1,8 @@
 import "./quill.snow.css";
-import Quill from "quill";
-import 'quill-paste-smart';
 import React, { useEffect, useRef } from "react";
+
+import Quill from "quill";
+import { sanitizePasteHtml } from "virtualized-chat";
 
 export const MarkdownEditor = (props) => {
   const ref = useRef(null);
@@ -12,6 +13,15 @@ export const MarkdownEditor = (props) => {
     props.handleMessageSent(quillRef.current.root.innerHTML);
     quillRef.current.setText('');
   }
+
+  const handleDrop = (e) => e.preventDefault();
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData("text/html");
+    const processedData = sanitizePasteHtml(pastedData);
+    quillRef.current.root.innerHTML = processedData;
+  };
 
   useEffect(() => {
     if (ref.current) {
@@ -25,40 +35,33 @@ export const MarkdownEditor = (props) => {
                   handler: sendMessage
               }
           },
-          clipboard: {
-            allowed: {
-                tags: ['a', 'b', 'strong', 'u', 's', 'i', 'p', 'br', 'ul', 'ol', 'li', 'span'],
-                attributes: ['href', 'rel', 'target', 'class']
-            },
-            keepSelection: true,
-            substituteBlockElements: false,
-            magicPasteLinks: true,
-        },
         }
       },
       theme: "snow",
       });
       quillRef.current.root.innerHTML = props.value;
+      quillRef.current.root.addEventListener("paste", handlePaste);
+      quillRef.current.root.addEventListener("drop", handleDrop);
     }
   }, []);
 
-  useEffect(()=>{
-    if (quillRef.current.root.innerHTML.includes('<p><br></p>')){
-      const newValue = quillRef.current.root.innerHTML.replaceAll('<p><br></p>', '');
-      quillRef.current.root.innerHTML = newValue;
-    }
-    if(quillRef.current.root.innerHTML !== props.value) {
-      const delta = quillRef.current.clipboard.convert(props.value);
-      quillRef.current.setContents(delta, 'silent');
-      return;
-    }
-    if(quillRef.current){
-      quillRef.current.on('text-change', (delta, oldDelta, source) => {
-        const value = quillRef.current.root.innerHTML;
+  useEffect(() => {
+    const currentQuill = quillRef.current;
+
+    if (currentQuill) {
+      if (currentQuill.root.innerHTML !== props.value) {
+        const delta = currentQuill.clipboard.convert(props.value);
+        currentQuill.setContents(delta, "silent");
+      }
+
+      const handleTextChange = (delta, oldDelta, source) => {
+        const value = currentQuill.root.innerHTML;
         props.setValue(value);
-      });
+      };
+
+      currentQuill.on("text-change", handleTextChange);
     }
-  },[quillRef.current, props.value])
+  }, [quillRef.current, props.value]);
 
   return (
       <div ref={ref} />
