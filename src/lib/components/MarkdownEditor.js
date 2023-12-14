@@ -27,7 +27,8 @@ export const MarkdownEditor = (props) => {
       pastedData = clipboardData.getData('text/plain');
     }
     const processedData = sanitizePasteHtml(pastedData);
-    quillRef.current.root.innerHTML = processedData;
+    const selection = quillRef.current.getSelection(true);
+    quillRef.current.insertText(selection.index, processedData);
   };
 
   useEffect(() => {
