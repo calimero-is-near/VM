@@ -73,4 +73,4 @@ export const MarkdownEditor = (props) => {
   return (
       <div ref={ref} />
   );
-}
+};
